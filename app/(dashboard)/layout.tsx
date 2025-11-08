@@ -10,11 +10,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/login")
   }
 
+  const user = {
+    name: session.user.name || "",
+    role: session.user.role,
+    barbershopId: session.user.barbershopId
+  }
+
   return (
     <div className="flex min-h-screen bg-neutral-100">
       <Sidebar role={session.user.role as "ADMIN" | "BARBER"} />
       <div className="flex flex-1 flex-col">
-        <Header user={session.user} />
+        <Header user={user} />
         <main className="flex-1 px-4 py-6 lg:px-8">{children}</main>
       </div>
     </div>

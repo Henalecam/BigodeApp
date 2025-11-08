@@ -70,7 +70,7 @@ export default async function DashboardPage() {
     metricsCards.push({
       title: "Seu faturamento no mês",
       value: data.metrics.personalRevenue,
-      highlight: "warning" as const,
+      highlight: "primary" as const,
       prefix: "currency" as const
     })
   }

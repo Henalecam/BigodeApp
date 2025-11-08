@@ -33,6 +33,13 @@ export default async function ClientsPage() {
     }
   })
 
-  return <ClientsScreen initialClients={clients} canManage={session.user.role === "ADMIN"} />
+  const formattedClients = clients.map(client => ({
+    ...client,
+    appointments: client.appointments.map(appointment => ({
+      date: appointment.date.toISOString()
+    }))
+  }))
+
+  return <ClientsScreen initialClients={formattedClients} canManage={session.user.role === "ADMIN"} />
 }
 

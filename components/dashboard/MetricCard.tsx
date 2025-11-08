@@ -7,7 +7,7 @@ type MetricCardProps = {
   title: string
   value: number
   description?: string
-  highlight?: "primary" | "success" | "warning"
+  highlight?: "primary" | "success"
   prefix?: string
 }
 
@@ -15,7 +15,7 @@ export function MetricCard({ title, value, description, highlight = "primary", p
   const formattedValue = prefix === "currency" ? formatCurrency(value) : value.toLocaleString("pt-BR")
 
   return (
-    <Card className={cn("border-primary/10", highlight === "success" && "border-success/30", highlight === "warning" && "border-warning/30")}>
+    <Card className={cn("border-primary/10", highlight === "success" && "border-success/30")}>
       <CardHeader className="space-y-1">
         <CardTitle className="text-sm font-medium text-neutral-500">{title}</CardTitle>
       </CardHeader>

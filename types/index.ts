@@ -39,3 +39,7 @@ export type AppointmentWithRelations = Appointment & {
   })[]
 }
 
+export type AppointmentWithRelationsStringDate = Omit<AppointmentWithRelations, 'date'> & {
+  date: string
+}
+

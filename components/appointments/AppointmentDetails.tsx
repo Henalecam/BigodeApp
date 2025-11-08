@@ -6,7 +6,7 @@ import { format } from "date-fns"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { AppointmentWithRelations } from "@/types"
+import { AppointmentWithRelationsStringDate } from "@/types"
 import { formatCurrency, formatDuration } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,14 +19,14 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { useToast } from "@/components/ui/use-toast"
 import { appointmentFinalizeSchema } from "@/lib/validations/appointment"
 
-const statusLabel: Record<AppointmentWithRelations["status"], string> = {
+const statusLabel: Record<AppointmentWithRelationsStringDate["status"], string> = {
   CONFIRMED: "Confirmado",
   IN_PROGRESS: "Em andamento",
   COMPLETED: "Concluído",
   CANCELLED: "Cancelado"
 }
 
-const statusVariant: Record<AppointmentWithRelations["status"], "default" | "success" | "warning" | "danger" | "outline"> = {
+const statusVariant: Record<AppointmentWithRelationsStringDate["status"], "default" | "success" | "warning" | "danger" | "outline"> = {
   CONFIRMED: "success",
   IN_PROGRESS: "warning",
   COMPLETED: "outline",
@@ -47,12 +47,8 @@ type ProductOption = {
   stock: number
 }
 
-type AppointmentData = AppointmentWithRelations & {
-  date: string
-}
-
 type AppointmentDetailsProps = {
-  appointment: AppointmentData
+  appointment: AppointmentWithRelationsStringDate
   services: ServiceOption[]
   products: ProductOption[]
   canManage: boolean
