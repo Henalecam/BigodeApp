@@ -1,63 +1,67 @@
 "use client"
 
 import * as React from "react"
-import { FormProvider, useFormContext, Controller } from "react-hook-form"
+import { FormProvider, useFormContext, Controller, ControllerProps, FieldPath, FieldValues } from "react-hook-form"
 import { cn } from "@/lib/utils"
 
 const Form = FormProvider
 
-export type FormFieldContextValue = {
-  name: string
+export type FormFieldContextValue<
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+> = {
+  name: TName
 }
 
-const FormFieldContext = React.createContext<FormFieldContextValue>({ name: "" })
+const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue)
 
-const FormField = ({
-  name,
-  render
-}: {
-  name: string
-  render: (field: ReturnType<typeof useFormField>) => React.ReactNode
-}) => {
-  const methods = useFormContext()
+const FormField = <
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+>({
+  ...props
+}: ControllerProps<TFieldValues, TName>) => {
   return (
-    <FormFieldContext.Provider value={{ name }}>
-      <Controller
-        control={methods.control}
-        name={name}
-        render={({ field, fieldState }) =>
-          render({
-            field,
-            fieldState,
-            formState: methods.formState
-          })
-        }
-      />
+    <FormFieldContext.Provider value={{ name: props.name }}>
+      <Controller {...props} />
     </FormFieldContext.Provider>
   )
 }
 
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext)
+  const itemContext = React.useContext(FormItemContext)
   const { getFieldState, formState } = useFormContext()
+
   const fieldState = getFieldState(fieldContext.name, formState)
 
+  if (!fieldContext) {
+    throw new Error("useFormField should be used within <FormField>")
+  }
+
+  const { id } = itemContext
+
   return {
+    id,
     name: fieldContext.name,
-    formItemId: `${fieldContext.name}-form-item`,
-    formDescriptionId: `${fieldContext.name}-form-item-description`,
-    formMessageId: `${fieldContext.name}-form-item-message`,
-    fieldState
+    formItemId: `${id}-form-item`,
+    formDescriptionId: `${id}-form-item-description`,
+    formMessageId: `${id}-form-item-message`,
+    ...fieldState
   }
 }
 
-const FormItemContext = React.createContext<string>("")
+type FormItemContextValue = {
+  id: string
+}
+
+const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue)
 
 const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => {
     const id = React.useId()
     return (
-      <FormItemContext.Provider value={id}>
+      <FormItemContext.Provider value={{ id }}>
         <div ref={ref} className={cn("space-y-2", className)} {...props} />
       </FormItemContext.Provider>
     )
@@ -112,4 +116,5 @@ const FormMessage = React.forwardRef<
 FormMessage.displayName = "FormMessage"
 
 export { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, useFormField }
+
 
