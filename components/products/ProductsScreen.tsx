@@ -129,7 +129,7 @@ export function ProductsScreen({ products: defaultProducts, canManage }: Product
       {products.length === 0 && canManage && (
         <div className="rounded-2xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-white to-neutral-50 p-12 text-center">
           <p className="text-lg font-semibold text-neutral-700 mb-2">Nenhum produto cadastrado</p>
-          <p className="text-sm text-neutral-500">Clique em "+ Novo produto" para adicionar o primeiro produto</p>
+          <p className="text-sm text-neutral-500">Clique em &quot;+ Novo produto&quot; para adicionar o primeiro produto</p>
         </div>
       )}
 

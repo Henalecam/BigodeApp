@@ -134,7 +134,7 @@ export function BarbersScreen({ initialBarbers, services, canManage }: BarbersSc
       {barbers.length === 0 && (
         <div className="rounded-2xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-white to-neutral-50 p-12 text-center">
           <p className="text-lg font-semibold text-neutral-700 mb-2">Nenhum barbeiro cadastrado</p>
-          <p className="text-sm text-neutral-500">Clique em "+ Novo barbeiro" para adicionar o primeiro profissional</p>
+          <p className="text-sm text-neutral-500">Clique em &quot;+ Novo barbeiro&quot; para adicionar o primeiro profissional</p>
         </div>
       )}
 

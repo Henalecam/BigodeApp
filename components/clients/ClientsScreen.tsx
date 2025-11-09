@@ -99,7 +99,7 @@ export function ClientsScreen({ initialClients, canManage }: ClientsScreenProps)
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">Clientes</h1>
-          <p className="text-sm text-neutral-600">Histórico e dados dos clientes • {filteredClients.length} {filteredClients.length === 1 ? 'cliente' : 'clientes'}</p>
+          <p className="text-sm text-neutral-600">Histórico e dados dos clientes • {sortedClients.length} {sortedClients.length === 1 ? 'cliente' : 'clientes'}</p>
         </div>
         {canManage ? (
           <Button onClick={() => setOpen(true)}>+ Novo cliente</Button>

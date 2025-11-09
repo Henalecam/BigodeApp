@@ -128,7 +128,7 @@ export function ServicesScreen({ services: defaultServices, canManage }: Service
       {services.length === 0 && canManage && (
         <div className="rounded-2xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-white to-neutral-50 p-12 text-center">
           <p className="text-lg font-semibold text-neutral-700 mb-2">Nenhum serviço cadastrado</p>
-          <p className="text-sm text-neutral-500">Clique em "+ Novo serviço" para adicionar o primeiro serviço</p>
+          <p className="text-sm text-neutral-500">Clique em &quot;+ Novo serviço&quot; para adicionar o primeiro serviço</p>
         </div>
       )}
 
