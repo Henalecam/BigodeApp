@@ -1,15 +1,22 @@
 # BarberPro - Sistema de Gestão para Barbearias
 
-Sistema web completo para gestão de barbearias, desenvolvido com Next.js 14, TypeScript, Prisma e PostgreSQL.
+Sistema web completo para gestão de barbearias, desenvolvido com Next.js 14, TypeScript e dados mockados.
 
 ## 🚀 Stack Tecnológica
 
 - **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui
-- **Backend:** Next.js API Routes, Prisma ORM
-- **Database:** PostgreSQL
+- **Backend:** Next.js API Routes com dados em memória (mock)
 - **Auth:** NextAuth.js
 - **State:** Zustand
 - **Validação:** Zod + react-hook-form
+
+## ✨ Características
+
+- ✅ **100% TypeScript** com strict mode
+- ✅ **Dados mockados** - sem necessidade de banco de dados
+- ✅ **Deploy simplificado** - apenas Vercel
+- ✅ **Responsivo** - mobile-first design
+- ✅ **Pronto para produção** - build otimizado
 
 ## 📋 Funcionalidades
 
@@ -53,14 +60,13 @@ Sistema web completo para gestão de barbearias, desenvolvido com Next.js 14, Ty
 
 ### Pré-requisitos
 - Node.js 18+
-- PostgreSQL 14+
 - npm ou yarn
 
 ### Passos
 
 1. **Clone o repositório**
 ```bash
-git clone <seu-repositorio>
+git clone https://github.com/Henalecam/BigodeApp
 cd BigodeApp
 ```
 
@@ -71,12 +77,11 @@ npm install
 
 3. **Configure as variáveis de ambiente**
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
 
-Edite `.env` com suas credenciais:
+Edite `.env.local`:
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/barberpro"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="sua-chave-secreta-aqui"
 ```
@@ -86,75 +91,49 @@ NEXTAUTH_SECRET="sua-chave-secreta-aqui"
 openssl rand -base64 32
 ```
 
-5. **Execute as migrations do Prisma**
-```bash
-npx prisma generate
-npx prisma migrate dev --name init
-```
-
-6. **Popule o banco com dados de exemplo (opcional)**
-```bash
-npm run seed
-```
-
-7. **Inicie o servidor de desenvolvimento**
+5. **Inicie o servidor de desenvolvimento**
 ```bash
 npm run dev
 ```
 
 Acesse: [http://localhost:3000](http://localhost:3000)
 
-### Credenciais de Teste (após seed)
+### Credenciais de Teste
 - **Admin:** admin@barberpro.com / Admin123!
 - **Barbeiro:** joao@barberpro.com / Barber123!
 
-## 🚢 Deploy
+## 🚢 Deploy na Vercel
 
-### Railway (Backend + Database)
-
-1. **Crie um novo projeto no Railway**
-
-2. **Adicione PostgreSQL**
-   - Novo serviço → Database → PostgreSQL
-   - Copie a `DATABASE_URL` gerada
-
-3. **Configure variáveis de ambiente**
-```env
-DATABASE_URL=postgresql://...
-NEXTAUTH_URL=https://seu-dominio.vercel.app
-NEXTAUTH_SECRET=<gerado-com-openssl>
-```
-
-4. **Deploy automático**
-   - Conecte seu repositório GitHub
-   - Railway detecta Next.js automaticamente
-   - Build command: `prisma generate && prisma migrate deploy && next build`
-
-### Vercel (Frontend)
-
-1. **Importe o projeto**
-   - New Project → Import do GitHub
-   - Framework Preset: Next.js (auto-detectado)
-
-2. **Configure variáveis de ambiente**
-```env
-DATABASE_URL=postgresql://... (mesma do Railway)
-NEXTAUTH_URL=https://seu-dominio.vercel.app
-NEXTAUTH_SECRET=<mesmo do Railway>
-```
-
-3. **Deploy**
-   - A Vercel fará deploy automático a cada push na branch `main`
-   - Build Command: `next build`
-   - Output Directory: `.next`
-
-### Após o primeiro deploy
-
-Execute as migrations no Railway:
+### 1. **Prepare o repositório**
 ```bash
-npx prisma migrate deploy
-npm run seed  # (opcional, para dados de exemplo)
+git add .
+git commit -m "Ready for deployment"
+git push origin main
 ```
+
+### 2. **Importe no Vercel**
+- Acesse [vercel.com](https://vercel.com)
+- New Project → Import do GitHub
+- Selecione o repositório `BigodeApp`
+- Framework Preset: **Next.js** (detectado automaticamente)
+
+### 3. **Configure variáveis de ambiente**
+
+No painel do Vercel, adicione:
+
+```env
+NEXTAUTH_URL=https://seu-dominio.vercel.app
+NEXTAUTH_SECRET=<gerar-com-openssl-rand-base64-32>
+```
+
+**⚠️ Importante:** 
+- Gere um `NEXTAUTH_SECRET` único para produção
+- Use o domínio da Vercel no `NEXTAUTH_URL`
+
+### 4. **Deploy automático**
+- A Vercel fará deploy automático
+- Cada push na branch `main` = novo deploy
+- Preview deploys em pull requests
 
 ## 📁 Estrutura do Projeto
 
@@ -163,7 +142,7 @@ npm run seed  # (opcional, para dados de exemplo)
 ├── app/
 │   ├── (auth)/          # Páginas de autenticação
 │   ├── (dashboard)/     # Páginas protegidas
-│   └── api/            # API Routes
+│   └── api/            # API Routes com mock data
 ├── components/
 │   ├── ui/             # Componentes shadcn/ui
 │   ├── appointments/   # Componentes de agendamentos
@@ -172,15 +151,26 @@ npm run seed  # (opcional, para dados de exemplo)
 │   ├── dashboard/      # Componentes do dashboard
 │   └── layout/         # Layout e navegação
 ├── hooks/              # Custom hooks
-├── lib/               # Utilitários e configurações
-│   ├── validations/   # Schemas Zod
-│   ├── auth.ts        # Configuração NextAuth
-│   └── prisma.ts      # Cliente Prisma
-├── prisma/
-│   ├── schema.prisma  # Schema do banco
-│   └── seed.ts        # Dados de exemplo
+├── lib/
+│   ├── mock-db.ts      # 📦 Banco de dados em memória
+│   ├── validations/    # Schemas Zod
+│   └── auth.ts         # Configuração NextAuth
 └── types/             # TypeScript types
 ```
+
+## 💾 Dados Mockados
+
+O projeto usa um banco de dados em memória (`lib/mock-db.ts`) com:
+
+- 1 Barbearia demo
+- 2 Usuários (Admin + Barbeiro)
+- 3 Barbeiros
+- 5 Clientes
+- 4 Serviços
+- 3 Produtos
+- 5 Agendamentos de exemplo
+
+**Nota:** Os dados são redefinidos quando o servidor reinicia. Para persistência, integre com PostgreSQL/MongoDB ou localStorage.
 
 ## 🔒 Segurança
 
@@ -189,7 +179,6 @@ npm run seed  # (opcional, para dados de exemplo)
 - ✅ Multi-tenancy (isolamento por barbearia)
 - ✅ Proteção de rotas (middleware)
 - ✅ TypeScript strict mode
-- ✅ Senha com hash bcrypt
 
 ## 🎨 Design System
 
@@ -212,31 +201,49 @@ npm run dev        # Desenvolvimento local
 npm run build      # Build de produção
 npm run start      # Servidor de produção
 npm run lint       # Lint do código
-npm run seed       # Popular banco com dados
 ```
 
 ## 🐛 Troubleshooting
 
-### Erro de conexão com o banco
-- Verifique se PostgreSQL está rodando
-- Confirme a `DATABASE_URL` no `.env`
-- Execute `npx prisma generate`
-
 ### Erro de autenticação
-- Valide o `NEXTAUTH_SECRET` no `.env`
+- Valide o `NEXTAUTH_SECRET` no `.env.local`
 - Confirme o `NEXTAUTH_URL` está correto
 - Limpe cookies do navegador
 
 ### Erro de build
 - Rode `npm install` novamente
-- Delete `.next` e `node_modules`
-- Execute `npm install` e `npm run build`
+- Delete `.next` e execute `npm run build`
+- Verifique a versão do Node (18+)
+
+### Dados não persistem
+- **Esperado:** dados em memória são perdidos ao reiniciar
+- Para produção: considere adicionar localStorage ou banco real
+
+## 🚀 Próximos Passos
+
+Para produção com dados persistentes:
+
+1. **Opção 1: Adicionar PostgreSQL**
+   - Restaurar Prisma
+   - Conectar ao Railway/Supabase
+   - Migrar mock-db para schema.prisma
+
+2. **Opção 2: LocalStorage (limitado)**
+   - Salvar `mockDb` no localStorage do navegador
+   - Útil apenas para demo single-user
+
+3. **Opção 3: API Externa**
+   - Criar API separada com Nest.js/Express
+   - Conectar frontend via axios
 
 ## 📄 Licença
 
 MIT
 
-## 👨‍💻 Desenvolvido por
+## 👨‍💻 Desenvolvido para
 
-Sistema criado como MVP completo seguindo as melhores práticas de Next.js, TypeScript e arquitetura full-stack.
+MVP completo de sistema de gestão para barbearias, seguindo as melhores práticas de Next.js e TypeScript.
 
+---
+
+**Deploy URL:** https://bigode-app.vercel.app _(exemplo)_
