@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getCurrentSession } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { ClientsScreen } from "@/components/clients/ClientsScreen"
 
 export default async function ClientsPage() {
@@ -9,37 +9,26 @@ export default async function ClientsPage() {
     redirect("/login")
   }
 
-  const clients = await prisma.client.findMany({
-    where: {
-      barbershopId: session.user.barbershopId
-    },
-    include: {
-      _count: {
-        select: {
-          appointments: true
-        }
-      },
-      appointments: {
-        orderBy: {
-          date: "desc"
+  const db = getDb()
+  const clients = db.clients
+    .filter(c => c.barbershopId === session.user.barbershopId)
+    .map(client => {
+      const appointments = db.appointments
+        .filter(a => a.clientId === client.id)
+        .sort((a, b) => b.date.getTime() - a.date.getTime())
+
+      return {
+        ...client,
+        _count: {
+          appointments: appointments.length
         },
-        select: {
-          date: true
-        }
+        appointments: appointments.map(a => ({
+          date: a.date.toISOString()
+        }))
       }
-    },
-    orderBy: {
-      name: "asc"
-    }
-  })
+    })
+    .sort((a, b) => a.name.localeCompare(b.name))
 
-  const formattedClients = clients.map(client => ({
-    ...client,
-    appointments: client.appointments.map(appointment => ({
-      date: appointment.date.toISOString()
-    }))
-  }))
-
-  return <ClientsScreen initialClients={formattedClients} canManage={session.user.role === "ADMIN"} />
+  return <ClientsScreen initialClients={clients} canManage={session.user.role === "ADMIN"} />
 }
 

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getCurrentSession } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { ServicesScreen } from "@/components/services/ServicesScreen"
 
 export default async function ServicesPage() {
@@ -9,14 +9,10 @@ export default async function ServicesPage() {
     redirect("/login")
   }
 
-  const services = await prisma.service.findMany({
-    where: {
-      barbershopId: session.user.barbershopId
-    },
-    orderBy: {
-      name: "asc"
-    }
-  })
+  const db = getDb()
+  const services = db.services
+    .filter(s => s.barbershopId === session.user.barbershopId)
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   const formatted = services.map(service => ({
     id: service.id,

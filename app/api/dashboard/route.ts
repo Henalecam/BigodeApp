@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { getCurrentSession } from "@/lib/auth"
 import { getDashboardData } from "@/lib/dashboard-data"
+import { getCurrentSession } from "@/lib/auth"
 
 export async function GET() {
   const session = await getCurrentSession()
@@ -19,4 +19,3 @@ export async function GET() {
     data
   })
 }
-

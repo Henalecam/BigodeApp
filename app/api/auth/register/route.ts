@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { hash } from "bcryptjs"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
+import { getDb, generateId } from "@/lib/mock-db"
 
 const registerSchema = z.object({
   barbershopName: z.string().min(3),
@@ -17,9 +16,9 @@ export async function POST(request: Request) {
     const body = await request.json()
     const data = registerSchema.parse(body)
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email: data.email }
-    })
+    const db = getDb()
+    const existingUser = db.users.find(u => u.email === data.email)
+    
     if (existingUser) {
       return NextResponse.json(
         { success: false, error: "Email já cadastrado" },
@@ -27,30 +26,34 @@ export async function POST(request: Request) {
       )
     }
 
-    const passwordHash = await hash(data.password, 10)
+    const barbershopId = generateId()
+    const userId = generateId()
 
-    const barbershop = await prisma.barbershop.create({
-      data: {
-        name: data.barbershopName,
-        phone: data.barbershopPhone,
-        address: data.barbershopAddress
-      }
+    db.barbershops.push({
+      id: barbershopId,
+      name: data.barbershopName,
+      phone: data.barbershopPhone,
+      address: data.barbershopAddress,
+      createdAt: new Date(),
+      updatedAt: new Date()
     })
 
-    const user = await prisma.user.create({
-      data: {
-        name: data.name,
-        email: data.email,
-        password: passwordHash,
-        barbershopId: barbershop.id
-      }
+    db.users.push({
+      id: userId,
+      email: data.email,
+      password: data.password,
+      name: data.name,
+      role: "ADMIN",
+      barbershopId,
+      createdAt: new Date(),
+      updatedAt: new Date()
     })
 
     return NextResponse.json({
       success: true,
       data: {
-        userId: user.id,
-        barbershopId: barbershop.id
+        userId,
+        barbershopId
       }
     })
   } catch (error) {

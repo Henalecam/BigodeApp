@@ -80,12 +80,7 @@ type AppointmentFetch = {
   }[]
 }
 
-const formSchema = appointmentCreateSchema.extend({
-  date: z.string().min(1),
-  barberId: z.string().min(1),
-  serviceIds: z.array(z.string().min(1)).min(1),
-  startTime: z.string().min(1)
-})
+const formSchema = appointmentCreateSchema
 
 function toMinutes(value: string) {
   const [hours, minutes] = value.split(":").map(Number)
@@ -418,8 +413,10 @@ export function AppointmentForm({ barbers, services, clients }: AppointmentFormP
                 value={form.watch("newClient")?.name ?? ""}
                 onChange={event =>
                   form.setValue("newClient", {
-                    ...form.getValues("newClient"),
-                    name: event.target.value
+                    name: event.target.value,
+                    phone: form.getValues("newClient")?.phone ?? "",
+                    email: form.getValues("newClient")?.email,
+                    notes: form.getValues("newClient")?.notes
                   })
                 }
               />
@@ -428,8 +425,10 @@ export function AppointmentForm({ barbers, services, clients }: AppointmentFormP
                 value={form.watch("newClient")?.phone ?? ""}
                 onChange={event =>
                   form.setValue("newClient", {
-                    ...form.getValues("newClient"),
-                    phone: event.target.value
+                    name: form.getValues("newClient")?.name ?? "",
+                    phone: event.target.value,
+                    email: form.getValues("newClient")?.email,
+                    notes: form.getValues("newClient")?.notes
                   })
                 }
               />
@@ -438,8 +437,10 @@ export function AppointmentForm({ barbers, services, clients }: AppointmentFormP
                 value={form.watch("newClient")?.email ?? ""}
                 onChange={event =>
                   form.setValue("newClient", {
-                    ...form.getValues("newClient"),
-                    email: event.target.value
+                    name: form.getValues("newClient")?.name ?? "",
+                    phone: form.getValues("newClient")?.phone ?? "",
+                    email: event.target.value,
+                    notes: form.getValues("newClient")?.notes
                   })
                 }
               />
@@ -448,7 +449,9 @@ export function AppointmentForm({ barbers, services, clients }: AppointmentFormP
                 value={form.watch("newClient")?.notes ?? ""}
                 onChange={event =>
                   form.setValue("newClient", {
-                    ...form.getValues("newClient"),
+                    name: form.getValues("newClient")?.name ?? "",
+                    phone: form.getValues("newClient")?.phone ?? "",
+                    email: form.getValues("newClient")?.email,
                     notes: event.target.value
                   })
                 }

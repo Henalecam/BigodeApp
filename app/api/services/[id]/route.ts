@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { getCurrentSession } from "@/lib/auth"
 import { serviceUpdateSchema } from "@/lib/validations/service"
 
@@ -20,28 +20,24 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const body = await request.json()
     const data = serviceUpdateSchema.parse(body)
 
-    const service = await prisma.service.findFirst({
-      where: {
-        id: params.id,
-        barbershopId: session.user.barbershopId
-      }
-    })
+    const db = getDb()
+    const serviceIndex = db.services.findIndex(
+      s => s.id === params.id && s.barbershopId === session.user.barbershopId
+    )
 
-    if (!service) {
+    if (serviceIndex === -1) {
       return NextResponse.json({ success: false, error: "Serviço não encontrado" }, { status: 404 })
     }
 
-    const updated = await prisma.service.update({
-      where: { id: params.id },
-      data: {
-        name: data.name ?? service.name,
-        duration: data.duration ?? service.duration,
-        price: data.price ?? service.price,
-        isActive: data.isActive ?? service.isActive
-      }
-    })
+    const service = db.services[serviceIndex]
 
-    return NextResponse.json({ success: true, data: updated })
+    if (data.name !== undefined) service.name = data.name
+    if (data.duration !== undefined) service.duration = data.duration
+    if (data.price !== undefined) service.price = data.price
+    if (data.isActive !== undefined) service.isActive = data.isActive
+    service.updatedAt = new Date()
+
+    return NextResponse.json({ success: true, data: service })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -62,21 +58,17 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
   }
 
-  const service = await prisma.service.findFirst({
-    where: { id: params.id, barbershopId: session.user.barbershopId }
-  })
+  const db = getDb()
+  const serviceIndex = db.services.findIndex(
+    s => s.id === params.id && s.barbershopId === session.user.barbershopId
+  )
 
-  if (!service) {
+  if (serviceIndex === -1) {
     return NextResponse.json({ success: false, error: "Serviço não encontrado" }, { status: 404 })
   }
 
-  await prisma.service.update({
-    where: { id: params.id },
-    data: {
-      isActive: false
-    }
-  })
+  db.services[serviceIndex].isActive = false
+  db.services[serviceIndex].updatedAt = new Date()
 
   return NextResponse.json({ success: true })
 }
-

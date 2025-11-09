@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { getCurrentSession } from "@/lib/auth"
 import { clientUpdateSchema } from "@/lib/validations/client"
 
@@ -16,38 +16,38 @@ export async function GET(request: Request, { params }: RouteContext) {
     return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
   }
 
-  const client = await prisma.client.findFirst({
-    where: {
-      id: params.id,
-      barbershopId: session.user.barbershopId
-    },
-    include: {
-      appointments: {
-        orderBy: {
-          date: "desc"
-        },
-        include: {
-          barber: true,
-          services: {
-            include: {
-              service: true
-            }
-          }
-        }
-      }
-    }
-  })
+  const db = getDb()
+  const client = db.clients.find(
+    c => c.id === params.id && c.barbershopId === session.user.barbershopId
+  )
 
   if (!client) {
     return NextResponse.json({ success: false, error: "Cliente não encontrado" }, { status: 404 })
   }
 
-  const totalSpent = client.appointments.reduce((total, appointment) => total + (appointment.totalValue ?? 0), 0)
+  const appointments = db.appointments
+    .filter(a => a.clientId === client.id)
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .map(appointment => ({
+      ...appointment,
+      barber: db.barbers.find(b => b.id === appointment.barberId)!,
+      services: db.appointmentServices
+        .filter(as => as.appointmentId === appointment.id)
+        .map(as => ({
+          appointmentId: as.appointmentId,
+          serviceId: as.serviceId,
+          price: as.price,
+          service: db.services.find(s => s.id === as.serviceId)!
+        }))
+    }))
+
+  const totalSpent = appointments.reduce((total, a) => total + (a.totalValue ?? 0), 0)
 
   return NextResponse.json({
     success: true,
     data: {
       ...client,
+      appointments,
       totalSpent
     }
   })
@@ -63,28 +63,24 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const body = await request.json()
     const data = clientUpdateSchema.parse(body)
 
-    const client = await prisma.client.findFirst({
-      where: {
-        id: params.id,
-        barbershopId: session.user.barbershopId
-      }
-    })
+    const db = getDb()
+    const clientIndex = db.clients.findIndex(
+      c => c.id === params.id && c.barbershopId === session.user.barbershopId
+    )
 
-    if (!client) {
+    if (clientIndex === -1) {
       return NextResponse.json({ success: false, error: "Cliente não encontrado" }, { status: 404 })
     }
 
-    const updated = await prisma.client.update({
-      where: { id: params.id },
-      data: {
-        name: data.name ?? client.name,
-        phone: data.phone ?? client.phone,
-        email: data.email ?? client.email,
-        notes: data.notes ?? client.notes
-      }
-    })
+    const client = db.clients[clientIndex]
 
-    return NextResponse.json({ success: true, data: updated })
+    if (data.name !== undefined) client.name = data.name
+    if (data.phone !== undefined) client.phone = data.phone
+    if (data.email !== undefined) client.email = data.email
+    if (data.notes !== undefined) client.notes = data.notes
+    client.updatedAt = new Date()
+
+    return NextResponse.json({ success: true, data: client })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -98,4 +94,3 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     )
   }
 }
-

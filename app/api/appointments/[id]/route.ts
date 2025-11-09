@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { parseISO, startOfDay, endOfDay, isBefore } from "date-fns"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { appointmentUpdateSchema } from "@/lib/validations/appointment"
 import { getCurrentSession } from "@/lib/auth"
 
@@ -17,38 +17,49 @@ export async function GET(request: Request, { params }: RouteContext) {
     return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
   }
 
-  const appointment = await prisma.appointment.findFirst({
-    where: { id: params.id, barbershopId: session.user.barbershopId },
-    include: {
-      client: true,
-      barber: {
-        include: {
-          workingHours: true,
-          barberServices: {
-            include: {
-              service: true
-            }
-          }
-        }
-      },
-      services: {
-        include: {
-          service: true
-        }
-      },
-      products: {
-        include: {
-          product: true
-        }
-      }
-    }
-  })
+  const db = getDb()
+  const appointment = db.appointments.find(
+    a => a.id === params.id && a.barbershopId === session.user.barbershopId
+  )
 
   if (!appointment) {
     return NextResponse.json({ success: false, error: "Agendamento não encontrado" }, { status: 404 })
   }
 
-  return NextResponse.json({ success: true, data: appointment })
+  const result = {
+    ...appointment,
+    client: db.clients.find(c => c.id === appointment.clientId)!,
+    barber: {
+      ...db.barbers.find(b => b.id === appointment.barberId)!,
+      workingHours: db.workingHours.filter(wh => wh.barberId === appointment.barberId),
+      barberServices: db.barberServices
+        .filter(bs => bs.barberId === appointment.barberId)
+        .map(bs => ({
+          barberId: bs.barberId,
+          serviceId: bs.serviceId,
+          service: db.services.find(s => s.id === bs.serviceId)!
+        }))
+    },
+    services: db.appointmentServices
+      .filter(as => as.appointmentId === appointment.id)
+      .map(as => ({
+        appointmentId: as.appointmentId,
+        serviceId: as.serviceId,
+        price: as.price,
+        service: db.services.find(s => s.id === as.serviceId)!
+      })),
+    products: db.appointmentProducts
+      .filter(ap => ap.appointmentId === appointment.id)
+      .map(ap => ({
+        appointmentId: ap.appointmentId,
+        productId: ap.productId,
+        quantity: ap.quantity,
+        unitPrice: ap.unitPrice,
+        product: db.products.find(p => p.id === ap.productId)!
+      }))
+  }
+
+  return NextResponse.json({ success: true, data: result })
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
@@ -61,39 +72,21 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const body = await request.json()
     const data = appointmentUpdateSchema.parse(body)
 
-    const appointment = await prisma.appointment.findFirst({
-      where: { id: params.id, barbershopId: session.user.barbershopId },
-      include: {
-        services: {
-          include: {
-            service: true
-          }
-        },
-        barber: {
-          include: {
-            workingHours: true,
-            barberServices: true
-          }
-        }
-      }
-    })
+    const db = getDb()
+    const appointmentIndex = db.appointments.findIndex(
+      a => a.id === params.id && a.barbershopId === session.user.barbershopId
+    )
 
-    if (!appointment) {
+    if (appointmentIndex === -1) {
       return NextResponse.json({ success: false, error: "Agendamento não encontrado" }, { status: 404 })
     }
 
+    const appointment = db.appointments[appointmentIndex]
+
     const targetBarberId = data.barberId ?? appointment.barberId
-    const barber = await prisma.barber.findFirst({
-      where: {
-        id: targetBarberId,
-        barbershopId: session.user.barbershopId,
-        isActive: true
-      },
-      include: {
-        workingHours: true,
-        barberServices: true
-      }
-    })
+    const barber = db.barbers.find(
+      b => b.id === targetBarberId && b.barbershopId === session.user.barbershopId && b.isActive
+    )
 
     if (!barber) {
       return NextResponse.json(
@@ -102,22 +95,23 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       )
     }
 
-    let services = appointment.services.map(item => item.service)
+    let services = db.appointmentServices
+      .filter(as => as.appointmentId === appointment.id)
+      .map(as => db.services.find(s => s.id === as.serviceId)!)
+
     if (data.serviceIds) {
-      services = await prisma.service.findMany({
-        where: {
-          id: { in: data.serviceIds },
-          barbershopId: session.user.barbershopId,
-          isActive: true
-        }
-      })
+      services = db.services.filter(
+        s => data.serviceIds!.includes(s.id) && s.barbershopId === session.user.barbershopId && s.isActive
+      )
       if (services.length !== data.serviceIds.length) {
         return NextResponse.json(
           { success: false, error: "Serviço inválido" },
           { status: 400 }
         )
       }
-      const barberServiceIds = new Set(barber.barberServices.map(item => item.serviceId))
+      const barberServiceIds = new Set(
+        db.barberServices.filter(bs => bs.barberId === barber.id).map(bs => bs.serviceId)
+      )
       const hasAll = services.every(service => barberServiceIds.has(service.id))
       if (!hasAll) {
         return NextResponse.json(
@@ -127,10 +121,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       }
     }
 
-    const appointmentDate = appointment.date
     const startTime = data.startTime ?? appointment.startTime
     const [startHour, startMinute] = startTime.split(":").map(Number)
-    const startDateTime = new Date(appointmentDate)
+    const startDateTime = new Date(appointment.date)
     startDateTime.setHours(startHour, startMinute, 0, 0)
 
     if (isBefore(startDateTime, new Date()) && appointment.status === "CONFIRMED") {
@@ -147,7 +140,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       endDateTime.getMinutes()
     ).padStart(2, "0")}`
 
-    const workingHour = barber.workingHours.find(slot => slot.dayOfWeek === startDateTime.getDay() && slot.isActive)
+    const workingHour = db.workingHours.find(
+      slot => slot.barberId === barber.id && slot.dayOfWeek === startDateTime.getDay() && slot.isActive
+    )
     if (!workingHour) {
       return NextResponse.json(
         { success: false, error: "Barbeiro não atende neste dia" },
@@ -162,33 +157,15 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       )
     }
 
-    const overlapping = await prisma.appointment.findFirst({
-      where: {
-        barbershopId: session.user.barbershopId,
-        barberId: targetBarberId,
-        date: {
-          gte: startOfDay(appointmentDate),
-          lte: endOfDay(appointmentDate)
-        },
-        id: { not: appointment.id },
-        status: {
-          in: ["CONFIRMED", "IN_PROGRESS", "COMPLETED"]
-        },
-        NOT: {
-          OR: [
-            {
-              endTime: {
-                lte: startTime
-              }
-            },
-            {
-              startTime: {
-                gte: endTime
-              }
-            }
-          ]
-        }
-      }
+    const start = startOfDay(appointment.date)
+    const end = endOfDay(appointment.date)
+    const overlapping = db.appointments.find(a => {
+      if (a.id === appointment.id) return false
+      if (a.barbershopId !== session.user.barbershopId) return false
+      if (a.barberId !== targetBarberId) return false
+      if (a.date < start || a.date > end) return false
+      if (!["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(a.status)) return false
+      return !(a.endTime <= startTime || a.startTime >= endTime)
     })
 
     if (overlapping) {
@@ -214,51 +191,46 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       }
     }
 
-    const updated = await prisma.$transaction(async tx => {
-      const updatedAppointment = await tx.appointment.update({
-        where: { id: appointment.id },
-        data: {
-          notes: data.notes ?? appointment.notes,
-          startTime,
-          endTime,
-          barberId: targetBarberId,
-          status: data.status ?? appointment.status
-        }
+    if (data.notes !== undefined) appointment.notes = data.notes
+    appointment.startTime = startTime
+    appointment.endTime = endTime
+    appointment.barberId = targetBarberId
+    if (data.status !== undefined) appointment.status = data.status
+    appointment.updatedAt = new Date()
+
+    if (data.serviceIds) {
+      db.appointmentServices = db.appointmentServices.filter(as => as.appointmentId !== appointment.id)
+      services.forEach(service => {
+        db.appointmentServices.push({
+          appointmentId: appointment.id,
+          serviceId: service.id,
+          price: service.price
+        })
       })
+    }
 
-      if (data.serviceIds) {
-        await tx.appointmentService.deleteMany({
-          where: { appointmentId: appointment.id }
-        })
-        await tx.appointmentService.createMany({
-          data: services.map(service => ({
-            appointmentId: appointment.id,
-            serviceId: service.id,
-            price: service.price
-          }))
-        })
-      }
-
-      return updatedAppointment
-    })
-
-    const result = await prisma.appointment.findUnique({
-      where: { id: updated.id },
-      include: {
-        client: true,
-        barber: true,
-        services: {
-          include: {
-            service: true
-          }
-        },
-        products: {
-          include: {
-            product: true
-          }
-        }
-      }
-    })
+    const result = {
+      ...appointment,
+      client: db.clients.find(c => c.id === appointment.clientId)!,
+      barber,
+      services: db.appointmentServices
+        .filter(as => as.appointmentId === appointment.id)
+        .map(as => ({
+          appointmentId: as.appointmentId,
+          serviceId: as.serviceId,
+          price: as.price,
+          service: db.services.find(s => s.id === as.serviceId)!
+        })),
+      products: db.appointmentProducts
+        .filter(ap => ap.appointmentId === appointment.id)
+        .map(ap => ({
+          appointmentId: ap.appointmentId,
+          productId: ap.productId,
+          quantity: ap.quantity,
+          unitPrice: ap.unitPrice,
+          product: db.products.find(p => p.id === ap.productId)!
+        }))
+    }
 
     return NextResponse.json({ success: true, data: result })
   } catch (error) {
@@ -281,21 +253,17 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
   }
 
-  const appointment = await prisma.appointment.findFirst({
-    where: { id: params.id, barbershopId: session.user.barbershopId }
-  })
+  const db = getDb()
+  const appointmentIndex = db.appointments.findIndex(
+    a => a.id === params.id && a.barbershopId === session.user.barbershopId
+  )
 
-  if (!appointment) {
+  if (appointmentIndex === -1) {
     return NextResponse.json({ success: false, error: "Agendamento não encontrado" }, { status: 404 })
   }
 
-  await prisma.appointment.update({
-    where: { id: params.id },
-    data: {
-      status: "CANCELLED"
-    }
-  })
+  db.appointments[appointmentIndex].status = "CANCELLED"
+  db.appointments[appointmentIndex].updatedAt = new Date()
 
   return NextResponse.json({ success: true })
 }
-

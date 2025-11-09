@@ -47,7 +47,7 @@ const useFormField = () => {
     formItemId: `${id}-form-item`,
     formDescriptionId: `${id}-form-item-description`,
     formMessageId: `${id}-form-item-message`,
-    ...fieldState
+    fieldState
   }
 }
 
@@ -100,7 +100,7 @@ const FormMessage = React.forwardRef<
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
   const { formMessageId, fieldState } = useFormField()
-  const body = fieldState.error ? fieldState.error.message : children
+  const body = fieldState?.error?.message ?? children
   if (!body) return null
   return (
     <p

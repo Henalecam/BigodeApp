@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { parseISO, startOfMonth, endOfDay } from "date-fns"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { getCurrentSession } from "@/lib/auth"
 
 export async function GET(request: Request) {
@@ -16,21 +16,16 @@ export async function GET(request: Request) {
   const startDate = startParam ? parseISO(startParam) : startOfMonth(new Date())
   const endDate = endParam ? endOfDay(parseISO(endParam)) : endOfDay(new Date())
 
-  const appointments = await prisma.appointment.findMany({
-    where: {
-      barbershopId: session.user.barbershopId,
-      status: "COMPLETED",
-      date: {
-        gte: startDate,
-        lte: endDate
-      }
-    },
-    include: {
-      barber: true
-    }
-  })
+  const db = getDb()
+  const appointments = db.appointments.filter(
+    a =>
+      a.barbershopId === session.user.barbershopId &&
+      a.status === "COMPLETED" &&
+      a.date >= startDate &&
+      a.date <= endDate
+  )
 
-  const totalRevenue = appointments.reduce((total, appointment) => total + (appointment.totalValue ?? 0), 0)
+  const totalRevenue = appointments.reduce((total, a) => total + (a.totalValue ?? 0), 0)
 
   const revenueByPayment = appointments.reduce<Record<string, number>>((acc, appointment) => {
     if (!appointment.paymentMethod) return acc
@@ -38,30 +33,28 @@ export async function GET(request: Request) {
     return acc
   }, {})
 
-  const revenueByBarber = appointments.reduce<
-    Record<
-      string,
-      {
-        barberId: string
-        barberName: string
-        totalRevenue: number
-        totalAppointments: number
-      }
-    >
-  >((acc, appointment) => {
-    const key = appointment.barberId
-    if (!acc[key]) {
-      acc[key] = {
-        barberId: appointment.barberId,
-        barberName: appointment.barber.name,
-        totalRevenue: 0,
-        totalAppointments: 0
-      }
+  const revenueByBarberMap = new Map<
+    string,
+    {
+      barberId: string
+      barberName: string
+      totalRevenue: number
+      totalAppointments: number
     }
-    acc[key].totalRevenue += appointment.totalValue ?? 0
-    acc[key].totalAppointments += 1
-    return acc
-  }, {})
+  >()
+
+  appointments.forEach(appointment => {
+    const barber = db.barbers.find(b => b.id === appointment.barberId)!
+    const item = revenueByBarberMap.get(appointment.barberId) ?? {
+      barberId: appointment.barberId,
+      barberName: barber.name,
+      totalRevenue: 0,
+      totalAppointments: 0
+    }
+    item.totalRevenue += appointment.totalValue ?? 0
+    item.totalAppointments += 1
+    revenueByBarberMap.set(appointment.barberId, item)
+  })
 
   const dailyRevenueMap = new Map<string, number>()
   appointments.forEach(appointment => {
@@ -78,9 +71,8 @@ export async function GET(request: Request) {
     data: {
       totalRevenue,
       revenueByPayment,
-      revenueByBarber: Object.values(revenueByBarber),
+      revenueByBarber: Array.from(revenueByBarberMap.values()),
       revenueTrend
     }
   })
 }
-

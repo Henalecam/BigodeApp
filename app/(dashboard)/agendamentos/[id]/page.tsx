@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getCurrentSession } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { AppointmentDetails } from "@/components/appointments/AppointmentDetails"
 
 type PageProps = {
@@ -15,54 +15,48 @@ export default async function AppointmentDetailsPage({ params }: PageProps) {
     redirect("/login")
   }
 
-  const appointment = await prisma.appointment.findFirst({
-    where: {
-      id: params.id,
-      barbershopId: session.user.barbershopId
-    },
-    include: {
-      client: true,
-      barber: true,
-      services: {
-        include: {
-          service: true
-        }
-      },
-      products: {
-        include: {
-          product: true
-        }
-      }
-    }
-  })
+  const db = getDb()
+  const appointment = db.appointments.find(
+    a => a.id === params.id && a.barbershopId === session.user.barbershopId
+  )
 
   if (!appointment) {
     redirect("/agendamentos")
   }
 
-  const [services, products] = await Promise.all([
-    prisma.service.findMany({
-      where: {
-        barbershopId: session.user.barbershopId,
-        isActive: true
-      },
-      orderBy: {
-        name: "asc"
-      }
-    }),
-    prisma.product.findMany({
-      where: {
-        barbershopId: session.user.barbershopId,
-        isActive: true
-      },
-      orderBy: {
-        name: "asc"
-      }
-    })
-  ])
+  const appointmentWithRelations = {
+    ...appointment,
+    client: db.clients.find(c => c.id === appointment.clientId)!,
+    barber: db.barbers.find(b => b.id === appointment.barberId)!,
+    services: db.appointmentServices
+      .filter(as => as.appointmentId === appointment.id)
+      .map(as => ({
+        appointmentId: as.appointmentId,
+        serviceId: as.serviceId,
+        price: as.price,
+        service: db.services.find(s => s.id === as.serviceId)!
+      })),
+    products: db.appointmentProducts
+      .filter(ap => ap.appointmentId === appointment.id)
+      .map(ap => ({
+        appointmentId: ap.appointmentId,
+        productId: ap.productId,
+        quantity: ap.quantity,
+        unitPrice: ap.unitPrice,
+        product: db.products.find(p => p.id === ap.productId)!
+      }))
+  }
+
+  const services = db.services
+    .filter(s => s.barbershopId === session.user.barbershopId && s.isActive)
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  const products = db.products
+    .filter(p => p.barbershopId === session.user.barbershopId && p.isActive)
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   const appointmentData = {
-    ...appointment,
+    ...appointmentWithRelations,
     date: appointment.date.toISOString()
   }
 

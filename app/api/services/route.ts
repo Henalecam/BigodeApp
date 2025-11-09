@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
+import { getDb, generateId } from "@/lib/mock-db"
 import { getCurrentSession } from "@/lib/auth"
 import { serviceCreateSchema } from "@/lib/validations/service"
 
@@ -10,14 +10,10 @@ export async function GET() {
     return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
   }
 
-  const services = await prisma.service.findMany({
-    where: {
-      barbershopId: session.user.barbershopId
-    },
-    orderBy: {
-      name: "asc"
-    }
-  })
+  const db = getDb()
+  const services = db.services
+    .filter(s => s.barbershopId === session.user.barbershopId)
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   return NextResponse.json({ success: true, data: services })
 }
@@ -32,15 +28,19 @@ export async function POST(request: Request) {
     const body = await request.json()
     const data = serviceCreateSchema.parse(body)
 
-    const service = await prisma.service.create({
-      data: {
-        name: data.name,
-        duration: data.duration,
-        price: data.price,
-        isActive: data.isActive ?? true,
-        barbershopId: session.user.barbershopId
-      }
-    })
+    const db = getDb()
+    const service = {
+      id: generateId(),
+      name: data.name,
+      duration: data.duration,
+      price: data.price,
+      isActive: data.isActive ?? true,
+      barbershopId: session.user.barbershopId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+
+    db.services.push(service)
 
     return NextResponse.json({ success: true, data: service })
   } catch (error) {
@@ -56,4 +56,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

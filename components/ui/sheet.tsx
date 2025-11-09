@@ -9,8 +9,8 @@ const Sheet = DialogPrimitive.Root
 const SheetTrigger = DialogPrimitive.Trigger
 const SheetClose = DialogPrimitive.Close
 
-const SheetPortal = ({ className, children, ...props }: DialogPrimitive.DialogPortalProps) => (
-  <DialogPrimitive.Portal className={className} {...props}>
+const SheetPortal = ({ children, ...props }: DialogPrimitive.DialogPortalProps) => (
+  <DialogPrimitive.Portal {...props}>
     <div className="fixed inset-0 z-50 flex">{children}</div>
   </DialogPrimitive.Portal>
 )

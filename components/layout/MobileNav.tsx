@@ -16,7 +16,7 @@ function renderItems(items: NavItem[], role: "ADMIN" | "BARBER", onSelect: () =>
     .map(item => (
       <div key={item.href} className="flex flex-col gap-1">
         <Link
-          href={item.href}
+          href={item.href as "/"}
           onClick={onSelect}
           className="rounded-md px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-primary/5 hover:text-primary"
         >
@@ -29,7 +29,7 @@ function renderItems(items: NavItem[], role: "ADMIN" | "BARBER", onSelect: () =>
               .map(child => (
                 <Link
                   key={child.href}
-                  href={child.href}
+                  href={child.href as "/"}
                   onClick={onSelect}
                   className="rounded-md px-3 py-1 text-xs text-neutral-500 transition hover:bg-primary/5 hover:text-primary"
                 >

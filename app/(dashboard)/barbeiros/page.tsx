@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getCurrentSession } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { BarbersScreen } from "@/components/barbers/BarbersScreen"
 
 export default async function BarbersPage() {
@@ -9,33 +9,26 @@ export default async function BarbersPage() {
     redirect("/login")
   }
 
-  const [barbers, services] = await Promise.all([
-    prisma.barber.findMany({
-      where: {
-        barbershopId: session.user.barbershopId
-      },
-      include: {
-        workingHours: true,
-        barberServices: {
-          include: {
-            service: true
-          }
-        }
-      },
-      orderBy: {
-        name: "asc"
-      }
-    }),
-    prisma.service.findMany({
-      where: {
-        barbershopId: session.user.barbershopId,
-        isActive: true
-      },
-      orderBy: {
-        name: "asc"
-      }
-    })
-  ])
+  const db = getDb()
+  
+  const barbers = db.barbers
+    .filter(b => b.barbershopId === session.user.barbershopId)
+    .map(barber => ({
+      ...barber,
+      workingHours: db.workingHours.filter(wh => wh.barberId === barber.id),
+      barberServices: db.barberServices
+        .filter(bs => bs.barberId === barber.id)
+        .map(bs => ({
+          barberId: bs.barberId,
+          serviceId: bs.serviceId,
+          service: db.services.find(s => s.id === bs.serviceId)!
+        }))
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  const services = db.services
+    .filter(s => s.barbershopId === session.user.barbershopId && s.isActive)
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   const formattedServices = services.map(service => ({
     id: service.id,

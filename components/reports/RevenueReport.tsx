@@ -110,7 +110,7 @@ export function RevenueReport() {
             <MetricCard
               title="Barbeiros envolvidos"
               value={data.revenueByBarber.length}
-              highlight="warning"
+              highlight="success"
               description="Profissionais com atendimentos concluídos"
             />
           </div>

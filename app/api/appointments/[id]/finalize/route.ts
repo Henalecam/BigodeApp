@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { appointmentFinalizeSchema } from "@/lib/validations/appointment"
 import { getCurrentSession } from "@/lib/auth"
 
@@ -20,19 +20,16 @@ export async function POST(request: Request, { params }: RouteContext) {
     const body = await request.json()
     const data = appointmentFinalizeSchema.parse(body)
 
-    const appointment = await prisma.appointment.findFirst({
-      where: {
-        id: params.id,
-        barbershopId: session.user.barbershopId
-      },
-      include: {
-        barber: true
-      }
-    })
+    const db = getDb()
+    const appointmentIndex = db.appointments.findIndex(
+      a => a.id === params.id && a.barbershopId === session.user.barbershopId
+    )
 
-    if (!appointment) {
+    if (appointmentIndex === -1) {
       return NextResponse.json({ success: false, error: "Agendamento não encontrado" }, { status: 404 })
     }
+
+    const appointment = db.appointments[appointmentIndex]
 
     if (appointment.status === "CANCELLED") {
       return NextResponse.json(
@@ -49,12 +46,9 @@ export async function POST(request: Request, { params }: RouteContext) {
     }
 
     const serviceIds = data.services.map(service => service.id)
-    const services = await prisma.service.findMany({
-      where: {
-        id: { in: serviceIds },
-        barbershopId: session.user.barbershopId
-      }
-    })
+    const services = db.services.filter(
+      s => serviceIds.includes(s.id) && s.barbershopId === session.user.barbershopId
+    )
 
     if (services.length !== data.services.length) {
       return NextResponse.json(
@@ -64,15 +58,9 @@ export async function POST(request: Request, { params }: RouteContext) {
     }
 
     const productIds = data.products?.map(product => product.id) ?? []
-    const products = productIds.length
-      ? await prisma.product.findMany({
-          where: {
-            id: { in: productIds },
-            barbershopId: session.user.barbershopId,
-            isActive: true
-          }
-        })
-      : []
+    const products = db.products.filter(
+      p => productIds.includes(p.id) && p.barbershopId === session.user.barbershopId && p.isActive
+    )
 
     if (productIds.length && products.length !== productIds.length) {
       return NextResponse.json(
@@ -81,11 +69,10 @@ export async function POST(request: Request, { params }: RouteContext) {
       )
     }
 
-    const productStockMap = new Map(products.map(product => [product.id, product.stock]))
     if (data.products) {
       for (const product of data.products) {
-        const stock = productStockMap.get(product.id)
-        if (stock === undefined || stock < product.quantity) {
+        const dbProduct = db.products.find(p => p.id === product.id)
+        if (!dbProduct || dbProduct.stock < product.quantity) {
           return NextResponse.json(
             { success: false, error: "Estoque insuficiente" },
             { status: 400 }
@@ -94,72 +81,61 @@ export async function POST(request: Request, { params }: RouteContext) {
       }
     }
 
-    const commission = (data.totalValue * appointment.barber.commissionRate) / 100
+    const barber = db.barbers.find(b => b.id === appointment.barberId)!
+    const commission = (data.totalValue * barber.commissionRate) / 100
 
-    await prisma.$transaction(async tx => {
-      await tx.appointment.update({
-        where: { id: appointment.id },
-        data: {
-          status: "COMPLETED",
-          totalValue: data.totalValue,
-          paymentMethod: data.paymentMethod
-        }
+    appointment.status = "COMPLETED"
+    appointment.totalValue = data.totalValue
+    appointment.paymentMethod = data.paymentMethod
+    appointment.updatedAt = new Date()
+
+    db.appointmentServices = db.appointmentServices.filter(as => as.appointmentId !== appointment.id)
+    data.services.forEach(service => {
+      db.appointmentServices.push({
+        appointmentId: appointment.id,
+        serviceId: service.id,
+        price: service.price
       })
+    })
 
-      await tx.appointmentService.deleteMany({
-        where: { appointmentId: appointment.id }
-      })
+    db.appointmentProducts = db.appointmentProducts.filter(ap => ap.appointmentId !== appointment.id)
+    if (data.products) {
+      data.products.forEach(product => {
+        const dbProduct = db.products.find(p => p.id === product.id)!
+        dbProduct.stock -= product.quantity
+        dbProduct.updatedAt = new Date()
 
-      await tx.appointmentService.createMany({
-        data: data.services.map(service => ({
+        db.appointmentProducts.push({
           appointmentId: appointment.id,
-          serviceId: service.id,
-          price: service.price
-        }))
-      })
-
-      await tx.appointmentProduct.deleteMany({
-        where: { appointmentId: appointment.id }
-      })
-
-      if (data.products?.length) {
-        for (const product of data.products) {
-          await tx.product.update({
-            where: { id: product.id },
-            data: {
-              stock: { decrement: product.quantity }
-            }
-          })
-        }
-
-        await tx.appointmentProduct.createMany({
-          data: data.products.map(product => ({
-            appointmentId: appointment.id,
-            productId: product.id,
-            quantity: product.quantity,
-            unitPrice: product.unitPrice
-          }))
+          productId: product.id,
+          quantity: product.quantity,
+          unitPrice: product.unitPrice
         })
-      }
-    })
+      })
+    }
 
-    const result = await prisma.appointment.findUnique({
-      where: { id: appointment.id },
-      include: {
-        client: true,
-        barber: true,
-        services: {
-          include: {
-            service: true
-          }
-        },
-        products: {
-          include: {
-            product: true
-          }
-        }
-      }
-    })
+    const result = {
+      ...appointment,
+      client: db.clients.find(c => c.id === appointment.clientId)!,
+      barber,
+      services: db.appointmentServices
+        .filter(as => as.appointmentId === appointment.id)
+        .map(as => ({
+          appointmentId: as.appointmentId,
+          serviceId: as.serviceId,
+          price: as.price,
+          service: db.services.find(s => s.id === as.serviceId)!
+        })),
+      products: db.appointmentProducts
+        .filter(ap => ap.appointmentId === appointment.id)
+        .map(ap => ({
+          appointmentId: ap.appointmentId,
+          productId: ap.productId,
+          quantity: ap.quantity,
+          unitPrice: ap.unitPrice,
+          product: db.products.find(p => p.id === ap.productId)!
+        }))
+    }
 
     return NextResponse.json({
       success: true,
@@ -181,4 +157,3 @@ export async function POST(request: Request, { params }: RouteContext) {
     )
   }
 }
-

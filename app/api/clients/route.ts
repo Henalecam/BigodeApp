@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
+import { getDb, generateId } from "@/lib/mock-db"
 import { getCurrentSession } from "@/lib/auth"
 import { clientCreateSchema } from "@/lib/validations/client"
 
@@ -13,48 +13,43 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get("query") ?? ""
 
-  const clients = await prisma.client.findMany({
-    where: {
-      barbershopId: session.user.barbershopId,
-      OR: [
-        {
-          name: {
-            contains: query,
-            mode: "insensitive"
-          }
+  const db = getDb()
+  const clients = db.clients
+    .filter(c => {
+      if (c.barbershopId !== session.user.barbershopId) return false
+      if (!query) return true
+      const lowerQuery = query.toLowerCase()
+      return (
+        c.name.toLowerCase().includes(lowerQuery) ||
+        c.phone.toLowerCase().includes(lowerQuery)
+      )
+    })
+    .map(client => {
+      const clientAppointments = db.appointments
+        .filter(a => a.clientId === client.id)
+        .sort((a, b) => b.date.getTime() - a.date.getTime())
+        .map(appointment => ({
+          ...appointment,
+          barber: db.barbers.find(b => b.id === appointment.barberId)!,
+          services: db.appointmentServices
+            .filter(as => as.appointmentId === appointment.id)
+            .map(as => ({
+              appointmentId: as.appointmentId,
+              serviceId: as.serviceId,
+              price: as.price,
+              service: db.services.find(s => s.id === as.serviceId)!
+            }))
+        }))
+
+      return {
+        ...client,
+        _count: {
+          appointments: clientAppointments.length
         },
-        {
-          phone: {
-            contains: query,
-            mode: "insensitive"
-          }
-        }
-      ]
-    },
-    include: {
-      _count: {
-        select: {
-          appointments: true
-        }
-      },
-      appointments: {
-        orderBy: {
-          date: "desc"
-        },
-        include: {
-          barber: true,
-          services: {
-            include: {
-              service: true
-            }
-          }
-        }
+        appointments: clientAppointments
       }
-    },
-    orderBy: {
-      name: "asc"
-    }
-  })
+    })
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   return NextResponse.json({ success: true, data: clients })
 }
@@ -69,15 +64,19 @@ export async function POST(request: Request) {
     const body = await request.json()
     const data = clientCreateSchema.parse(body)
 
-    const client = await prisma.client.create({
-      data: {
-        name: data.name,
-        phone: data.phone,
-        email: data.email,
-        notes: data.notes,
-        barbershopId: session.user.barbershopId
-      }
-    })
+    const db = getDb()
+    const client = {
+      id: generateId(),
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      notes: data.notes,
+      barbershopId: session.user.barbershopId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+
+    db.clients.push(client)
 
     return NextResponse.json({ success: true, data: client })
   } catch (error) {
@@ -93,4 +92,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { parseISO, startOfMonth, endOfDay } from "date-fns"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { getCurrentSession } from "@/lib/auth"
 
 export async function GET(request: Request) {
@@ -17,20 +17,18 @@ export async function GET(request: Request) {
   const startDate = startParam ? parseISO(startParam) : startOfMonth(new Date())
   const endDate = endParam ? endOfDay(parseISO(endParam)) : endOfDay(new Date())
 
-  const appointments = await prisma.appointment.findMany({
-    where: {
-      barbershopId: session.user.barbershopId,
-      status: "COMPLETED",
-      date: {
-        gte: startDate,
-        lte: endDate
-      },
-      ...(barberId ? { barberId } : {})
-    },
-    include: {
-      barber: true
-    }
-  })
+  const db = getDb()
+  let appointments = db.appointments.filter(
+    a =>
+      a.barbershopId === session.user.barbershopId &&
+      a.status === "COMPLETED" &&
+      a.date >= startDate &&
+      a.date <= endDate
+  )
+
+  if (barberId) {
+    appointments = appointments.filter(a => a.barberId === barberId)
+  }
 
   const resultMap = new Map<
     string,
@@ -44,10 +42,11 @@ export async function GET(request: Request) {
   >()
 
   appointments.forEach(appointment => {
+    const barber = db.barbers.find(b => b.id === appointment.barberId)!
     const item = resultMap.get(appointment.barberId) ?? {
       barberId: appointment.barberId,
-      barberName: appointment.barber.name,
-      commissionRate: appointment.barber.commissionRate,
+      barberName: barber.name,
+      commissionRate: barber.commissionRate,
       totalAppointments: 0,
       totalRevenue: 0
     }
@@ -70,4 +69,3 @@ export async function GET(request: Request) {
     data
   })
 }
-

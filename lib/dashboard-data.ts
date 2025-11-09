@@ -9,8 +9,7 @@ import {
   startOfWeek,
   subDays
 } from "date-fns"
-import { AppointmentStatus, Product } from "@prisma/client"
-import { prisma } from "@/lib/prisma"
+import { getDb, AppointmentStatus } from "@/lib/mock-db"
 
 export type DashboardMetrics = {
   dailyRevenue: number
@@ -64,6 +63,7 @@ type DashboardParams = {
 }
 
 export async function getDashboardData({ barbershopId, role, userId }: DashboardParams): Promise<DashboardData> {
+  const db = getDb()
   const today = new Date()
   const startToday = startOfDay(today)
   const endToday = endOfDay(today)
@@ -73,162 +73,41 @@ export async function getDashboardData({ barbershopId, role, userId }: Dashboard
   const endMonthDate = endOfMonth(today)
   const trendStart = startOfDay(subDays(today, 6))
 
-  const baseAppointmentWhere = {
-    barbershopId,
-    status: {
-      in: ["CONFIRMED", "IN_PROGRESS", "COMPLETED"] as AppointmentStatus[]
+  let appointments = db.appointments.filter(a => a.barbershopId === barbershopId)
+
+  if (role === "BARBER") {
+    const barber = db.barbers.find(b => b.barbershopId === barbershopId && b.name === db.users.find(u => u.id === userId)?.name)
+    if (barber) {
+      appointments = appointments.filter(a => a.barberId === barber.id)
     }
   }
 
-  const completedWhere = {
-    ...baseAppointmentWhere,
-    status: "COMPLETED" as AppointmentStatus
-  }
+  const completedAppointments = appointments.filter(a => a.status === "COMPLETED")
 
-  const [
-    dailyRevenueAgg,
-    weeklyRevenueAgg,
-    monthlyRevenueAgg,
-    totalAppointments,
-    personalAppointments,
-    personalRevenue,
-    trendAppointments,
-    topBarbers,
-    upcomingAppointments,
-    lowStockProducts
-  ] = await Promise.all([
-    prisma.appointment.aggregate({
-      where: {
-        ...completedWhere,
-        date: {
-          gte: startToday,
-          lte: endToday
-        },
-        ...(role === "BARBER" ? { barberId: userId } : {})
-      },
-      _sum: {
-        totalValue: true
-      }
-    }),
-    prisma.appointment.aggregate({
-      where: {
-        ...completedWhere,
-        date: {
-          gte: startWeek,
-          lte: endWeek
-        },
-        ...(role === "BARBER" ? { barberId: userId } : {})
-      },
-      _sum: {
-        totalValue: true
-      }
-    }),
-    prisma.appointment.aggregate({
-      where: {
-        ...completedWhere,
-        date: {
-          gte: startMonthDate,
-          lte: endMonthDate
-        },
-        ...(role === "BARBER" ? { barberId: userId } : {})
-      },
-      _sum: {
-        totalValue: true
-      }
-    }),
-    prisma.appointment.count({
-      where: {
-        ...baseAppointmentWhere
-      }
-    }),
-    role === "BARBER"
-      ? prisma.appointment.count({
-          where: {
-            ...baseAppointmentWhere,
-            barberId: userId,
-            date: {
-              gte: startToday,
-              lte: endToday
-            }
-          }
-        })
-      : Promise.resolve(0),
-    role === "BARBER"
-      ? prisma.appointment.aggregate({
-          where: {
-            ...completedWhere,
-            barberId: userId,
-            date: {
-              gte: startMonthDate,
-              lte: endMonthDate
-            }
-          },
-          _sum: {
-            totalValue: true
-          }
-        })
-      : Promise.resolve({ _sum: { totalValue: 0 } }),
-    prisma.appointment.findMany({
-      where: {
-        ...completedWhere,
-        date: {
-          gte: trendStart,
-          lte: endToday
-        },
-        ...(role === "BARBER" ? { barberId: userId } : {})
-      },
-      select: {
-        date: true,
-        totalValue: true
-      }
-    }),
-    prisma.appointment.groupBy({
-      by: ["barberId"],
-      where: {
-        ...completedWhere,
-        date: {
-          gte: startMonthDate,
-          lte: endMonthDate
-        }
-      },
-      _count: { _all: true },
-      _sum: { totalValue: true }
-    }),
-    prisma.appointment.findMany({
-      where: {
-        ...baseAppointmentWhere,
-        date: {
-          gte: startToday,
-          lte: endToday
-        },
-        status: {
-          in: ["CONFIRMED", "IN_PROGRESS"] as AppointmentStatus[]
-        },
-        ...(role === "BARBER" ? { barberId: userId } : {})
-      },
-      include: {
-        client: true,
-        barber: true,
-        services: {
-          include: {
-            service: true
-          }
-        }
-      },
-      orderBy: {
-        startTime: "asc"
-      },
-      take: role === "BARBER" ? 10 : 20
-    }),
-    role === "ADMIN"
-      ? prisma.product.findMany({
-          where: {
-            barbershopId,
-            isActive: true
-          }
-        })
-      : Promise.resolve([])
-  ])
+  const dailyRevenue = completedAppointments
+    .filter(a => a.date >= startToday && a.date <= endToday)
+    .reduce((total, a) => total + (a.totalValue ?? 0), 0)
+
+  const weeklyRevenue = completedAppointments
+    .filter(a => a.date >= startWeek && a.date <= endWeek)
+    .reduce((total, a) => total + (a.totalValue ?? 0), 0)
+
+  const monthlyRevenue = completedAppointments
+    .filter(a => a.date >= startMonthDate && a.date <= endMonthDate)
+    .reduce((total, a) => total + (a.totalValue ?? 0), 0)
+
+  const totalAppointments = appointments.filter(a =>
+    ["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(a.status)
+  ).length
+
+  const personalAppointments = role === "BARBER"
+    ? appointments.filter(a =>
+        a.date >= startToday && a.date <= endToday &&
+        ["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(a.status)
+      ).length
+    : undefined
+
+  const personalRevenue = role === "BARBER" ? monthlyRevenue : undefined
 
   const revenueTrendMap = new Map<string, number>()
   for (let index = 0; index < 7; index += 1) {
@@ -236,76 +115,85 @@ export async function getDashboardData({ barbershopId, role, userId }: Dashboard
     revenueTrendMap.set(dateKey, 0)
   }
 
-  trendAppointments.forEach(appointment => {
-    const dateKey = formatISO(appointment.date, { representation: "date" })
-    const current = revenueTrendMap.get(dateKey) ?? 0
-    revenueTrendMap.set(dateKey, current + (appointment.totalValue ?? 0))
-  })
+  completedAppointments
+    .filter(a => a.date >= trendStart && a.date <= endToday)
+    .forEach(appointment => {
+      const dateKey = formatISO(appointment.date, { representation: "date" })
+      const current = revenueTrendMap.get(dateKey) ?? 0
+      revenueTrendMap.set(dateKey, current + (appointment.totalValue ?? 0))
+    })
 
   const revenueTrend: DashboardRevenuePoint[] = Array.from(revenueTrendMap.entries()).map(([date, value]) => ({
     label: date,
     value
   }))
 
-  const barbersData = await prisma.barber.findMany({
-    where: {
-      barbershopId
-    },
-    select: {
-      id: true,
-      name: true
-    }
-  })
+  const barberStatsMap = new Map<string, { totalAppointments: number; totalRevenue: number }>()
 
-  const barbersById = new Map(barbersData.map(barber => [barber.id, barber.name]))
+  completedAppointments
+    .filter(a => a.date >= startMonthDate && a.date <= endMonthDate)
+    .forEach(appointment => {
+      const stats = barberStatsMap.get(appointment.barberId) ?? { totalAppointments: 0, totalRevenue: 0 }
+      stats.totalAppointments += 1
+      stats.totalRevenue += appointment.totalValue ?? 0
+      barberStatsMap.set(appointment.barberId, stats)
+    })
 
-  const topBarbersList: DashboardTopBarber[] = topBarbers
-    .map(item => ({
-      id: item.barberId,
-      name: barbersById.get(item.barberId) ?? "Barbeiro",
-      totalAppointments: item._count._all,
-      totalRevenue: Number(item._sum.totalValue ?? 0)
-    }))
+  const topBarbers: DashboardTopBarber[] = Array.from(barberStatsMap.entries())
+    .map(([barberId, stats]) => {
+      const barber = db.barbers.find(b => b.id === barberId)
+      return {
+        id: barberId,
+        name: barber?.name ?? "Barbeiro",
+        totalAppointments: stats.totalAppointments,
+        totalRevenue: stats.totalRevenue
+      }
+    })
     .sort((a, b) => b.totalAppointments - a.totalAppointments)
     .slice(0, 3)
 
-  const lowStockList: DashboardLowStockProduct[] =
-    role === "ADMIN"
-      ? (lowStockProducts as Product[])
-          .filter(product => product.stock < product.minStock)
-          .map(product => ({
-            id: product.id,
-            name: product.name,
-            stock: product.stock,
-            minStock: product.minStock
-          }))
-      : []
+  const upcoming = appointments
+    .filter(a => {
+      if (a.date < startToday || a.date > endToday) return false
+      return ["CONFIRMED", "IN_PROGRESS"].includes(a.status)
+    })
+    .sort((a, b) => a.startTime.localeCompare(b.startTime))
+    .slice(0, role === "BARBER" ? 10 : 20)
 
-  const upcomingList: DashboardUpcomingAppointment[] = upcomingAppointments.map(appointment => ({
+  const upcomingAppointments: DashboardUpcomingAppointment[] = upcoming.map(appointment => ({
     id: appointment.id,
-    clientName: appointment.client.name,
-    barberName: appointment.barber.name,
+    clientName: db.clients.find(c => c.id === appointment.clientId)?.name ?? "Cliente",
+    barberName: db.barbers.find(b => b.id === appointment.barberId)?.name ?? "Barbeiro",
     startTime: appointment.startTime,
-    services: appointment.services.map(item => item.service.name),
+    services: db.appointmentServices
+      .filter(as => as.appointmentId === appointment.id)
+      .map(as => db.services.find(s => s.id === as.serviceId)?.name ?? "Serviço"),
     status: appointment.status
   }))
 
+  const lowStockProducts: DashboardLowStockProduct[] = role === "ADMIN"
+    ? db.products
+        .filter(p => p.barbershopId === barbershopId && p.isActive && p.stock < p.minStock)
+        .map(p => ({
+          id: p.id,
+          name: p.name,
+          stock: p.stock,
+          minStock: p.minStock
+        }))
+    : []
+
   return {
     metrics: {
-      dailyRevenue: Number(dailyRevenueAgg._sum.totalValue ?? 0),
-      weeklyRevenue: Number(weeklyRevenueAgg._sum.totalValue ?? 0),
-      monthlyRevenue: Number(monthlyRevenueAgg._sum.totalValue ?? 0),
+      dailyRevenue,
+      weeklyRevenue,
+      monthlyRevenue,
       totalAppointments,
-      personalAppointments: role === "BARBER" ? personalAppointments : undefined,
-      personalRevenue: role === "BARBER" ? Number(personalRevenue._sum.totalValue ?? 0) : undefined
+      personalAppointments,
+      personalRevenue
     },
     revenueTrend,
-    topBarbers: topBarbersList,
-    upcomingAppointments: upcomingList,
-    lowStockProducts: lowStockList
+    topBarbers,
+    upcomingAppointments,
+    lowStockProducts
   }
 }
-
-
-
-

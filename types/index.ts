@@ -7,11 +7,13 @@ import {
   Product,
   Service,
   WorkingHours
-} from "@prisma/client"
+} from "@/lib/mock-db"
 
 export type BarberWithRelations = Barber & {
   workingHours: WorkingHours[]
   barberServices: {
+    barberId: string
+    serviceId: string
     service: Service
   }[]
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
+import { getDb, generateId } from "@/lib/mock-db"
 import { getCurrentSession } from "@/lib/auth"
 import { barberCreateSchema } from "@/lib/validations/barber"
 
@@ -10,22 +10,21 @@ export async function GET() {
     return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
   }
 
-  const barbers = await prisma.barber.findMany({
-    where: {
-      barbershopId: session.user.barbershopId
-    },
-    include: {
-      workingHours: true,
-      barberServices: {
-        include: {
-          service: true
-        }
-      }
-    },
-    orderBy: {
-      name: "asc"
-    }
-  })
+  const db = getDb()
+  const barbers = db.barbers
+    .filter(b => b.barbershopId === session.user.barbershopId)
+    .map(barber => ({
+      ...barber,
+      workingHours: db.workingHours.filter(wh => wh.barberId === barber.id),
+      barberServices: db.barberServices
+        .filter(bs => bs.barberId === barber.id)
+        .map(bs => ({
+          barberId: bs.barberId,
+          serviceId: bs.serviceId,
+          service: db.services.find(s => s.id === bs.serviceId)!
+        }))
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   return NextResponse.json({ success: true, data: barbers })
 }
@@ -40,13 +39,10 @@ export async function POST(request: Request) {
     const body = await request.json()
     const data = barberCreateSchema.parse(body)
 
-    const services = await prisma.service.findMany({
-      where: {
-        id: { in: data.serviceIds },
-        barbershopId: session.user.barbershopId,
-        isActive: true
-      }
-    })
+    const db = getDb()
+    const services = db.services.filter(
+      s => data.serviceIds.includes(s.id) && s.barbershopId === session.user.barbershopId && s.isActive
+    )
 
     if (services.length !== data.serviceIds.length) {
       return NextResponse.json(
@@ -55,37 +51,52 @@ export async function POST(request: Request) {
       )
     }
 
-    const barber = await prisma.barber.create({
-      data: {
-        name: data.name,
-        phone: data.phone,
-        commissionRate: data.commissionRate,
-        barbershopId: session.user.barbershopId,
-        workingHours: {
-          create: data.workingHours.map(hour => ({
-            dayOfWeek: hour.dayOfWeek,
-            startTime: hour.startTime,
-            endTime: hour.endTime,
-            isActive: hour.isActive ?? true
-          }))
-        },
-        barberServices: {
-          create: data.serviceIds.map(serviceId => ({
-            serviceId
-          }))
-        }
-      },
-      include: {
-        workingHours: true,
-        barberServices: {
-          include: {
-            service: true
-          }
-        }
-      }
+    const barberId = generateId()
+
+    const barber = {
+      id: barberId,
+      name: data.name,
+      phone: data.phone,
+      commissionRate: data.commissionRate,
+      isActive: true,
+      barbershopId: session.user.barbershopId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+
+    db.barbers.push(barber)
+
+    data.workingHours.forEach(hour => {
+      db.workingHours.push({
+        id: generateId(),
+        barberId,
+        dayOfWeek: hour.dayOfWeek,
+        startTime: hour.startTime,
+        endTime: hour.endTime,
+        isActive: hour.isActive ?? true
+      })
     })
 
-    return NextResponse.json({ success: true, data: barber })
+    data.serviceIds.forEach(serviceId => {
+      db.barberServices.push({
+        barberId,
+        serviceId
+      })
+    })
+
+    const result = {
+      ...barber,
+      workingHours: db.workingHours.filter(wh => wh.barberId === barberId),
+      barberServices: db.barberServices
+        .filter(bs => bs.barberId === barberId)
+        .map(bs => ({
+          barberId: bs.barberId,
+          serviceId: bs.serviceId,
+          service: db.services.find(s => s.id === bs.serviceId)!
+        }))
+    }
+
+    return NextResponse.json({ success: true, data: result })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -99,4 +110,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { getCurrentSession } from "@/lib/auth"
 import { productUpdateSchema } from "@/lib/validations/product"
 
@@ -20,29 +20,25 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const body = await request.json()
     const data = productUpdateSchema.parse(body)
 
-    const product = await prisma.product.findFirst({
-      where: {
-        id: params.id,
-        barbershopId: session.user.barbershopId
-      }
-    })
+    const db = getDb()
+    const productIndex = db.products.findIndex(
+      p => p.id === params.id && p.barbershopId === session.user.barbershopId
+    )
 
-    if (!product) {
+    if (productIndex === -1) {
       return NextResponse.json({ success: false, error: "Produto não encontrado" }, { status: 404 })
     }
 
-    const updated = await prisma.product.update({
-      where: { id: params.id },
-      data: {
-        name: data.name ?? product.name,
-        stock: data.stock ?? product.stock,
-        minStock: data.minStock ?? product.minStock,
-        salePrice: data.salePrice ?? product.salePrice,
-        isActive: data.isActive ?? product.isActive
-      }
-    })
+    const product = db.products[productIndex]
 
-    return NextResponse.json({ success: true, data: updated })
+    if (data.name !== undefined) product.name = data.name
+    if (data.stock !== undefined) product.stock = data.stock
+    if (data.minStock !== undefined) product.minStock = data.minStock
+    if (data.salePrice !== undefined) product.salePrice = data.salePrice
+    if (data.isActive !== undefined) product.isActive = data.isActive
+    product.updatedAt = new Date()
+
+    return NextResponse.json({ success: true, data: product })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -63,21 +59,17 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
   }
 
-  const product = await prisma.product.findFirst({
-    where: { id: params.id, barbershopId: session.user.barbershopId }
-  })
+  const db = getDb()
+  const productIndex = db.products.findIndex(
+    p => p.id === params.id && p.barbershopId === session.user.barbershopId
+  )
 
-  if (!product) {
+  if (productIndex === -1) {
     return NextResponse.json({ success: false, error: "Produto não encontrado" }, { status: 404 })
   }
 
-  await prisma.product.update({
-    where: { id: params.id },
-    data: {
-      isActive: false
-    }
-  })
+  db.products[productIndex].isActive = false
+  db.products[productIndex].updatedAt = new Date()
 
   return NextResponse.json({ success: true })
 }
-

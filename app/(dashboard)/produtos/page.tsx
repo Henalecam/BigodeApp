@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getCurrentSession } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { ProductsScreen } from "@/components/products/ProductsScreen"
 
 export default async function ProductsPage() {
@@ -9,14 +9,10 @@ export default async function ProductsPage() {
     redirect("/login")
   }
 
-  const products = await prisma.product.findMany({
-    where: {
-      barbershopId: session.user.barbershopId
-    },
-    orderBy: {
-      name: "asc"
-    }
-  })
+  const db = getDb()
+  const products = db.products
+    .filter(p => p.barbershopId === session.user.barbershopId)
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   const formatted = products.map(product => ({
     id: product.id,

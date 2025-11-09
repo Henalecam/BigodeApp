@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getCurrentSession } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { ClientDetail } from "@/components/clients/ClientDetail"
 
 type PageProps = {
@@ -15,31 +15,37 @@ export default async function ClientDetailPage({ params }: PageProps) {
     redirect("/login")
   }
 
-  const client = await prisma.client.findFirst({
-    where: {
-      id: params.id,
-      barbershopId: session.user.barbershopId
-    },
-    include: {
-      appointments: {
-        orderBy: {
-          date: "desc"
-        },
-        include: {
-          barber: true,
-          services: {
-            include: {
-              service: true
-            }
-          }
-        }
-      }
-    }
-  })
+  const db = getDb()
+  const client = db.clients.find(
+    c => c.id === params.id && c.barbershopId === session.user.barbershopId
+  )
 
   if (!client) {
     redirect("/clientes")
   }
+
+  const appointments = db.appointments
+    .filter(a => a.clientId === client.id)
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .map(appointment => {
+      const barber = db.barbers.find(b => b.id === appointment.barberId)!
+      const services = db.appointmentServices
+        .filter(as => as.appointmentId === appointment.id)
+        .map(as => ({
+          appointmentId: as.appointmentId,
+          serviceId: as.serviceId,
+          price: as.price,
+          service: db.services.find(s => s.id === as.serviceId)!
+        }))
+
+      return {
+        id: appointment.id,
+        date: appointment.date.toISOString(),
+        barberName: barber.name,
+        services: services.map(s => s.service.name),
+        total: appointment.totalValue ?? services.reduce((total, s) => total + s.price, 0)
+      }
+    })
 
   const formatted = {
     id: client.id,
@@ -47,14 +53,8 @@ export default async function ClientDetailPage({ params }: PageProps) {
     phone: client.phone,
     email: client.email,
     notes: client.notes,
-    totalSpent: client.appointments.reduce((total, appointment) => total + (appointment.totalValue ?? 0), 0),
-    appointments: client.appointments.map(appointment => ({
-      id: appointment.id,
-      date: appointment.date.toISOString(),
-      barberName: appointment.barber.name,
-      services: appointment.services.map(item => item.service.name),
-      total: appointment.totalValue ?? appointment.services.reduce((total, item) => total + item.price, 0)
-    }))
+    totalSpent: appointments.reduce((total, a) => total + a.total, 0),
+    appointments
   }
 
   return <ClientDetail client={formatted} />

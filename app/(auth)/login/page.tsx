@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { z } from "zod"
@@ -17,7 +17,7 @@ const loginSchema = z.object({
   password: z.string().min(6, "Senha inválida")
 })
 
-export default function LoginPage() {
+function LoginForm() {
   const { addToast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -99,6 +99,14 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <LoginForm />
+    </Suspense>
   )
 }
 

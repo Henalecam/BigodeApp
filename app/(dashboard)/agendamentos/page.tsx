@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getCurrentSession } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { getDb } from "@/lib/mock-db"
 import { AppointmentsScreen } from "@/components/appointments/AppointmentsScreen"
 
 export default async function AppointmentsPage() {
@@ -9,19 +9,14 @@ export default async function AppointmentsPage() {
     redirect("/login")
   }
 
-  const barbers = await prisma.barber.findMany({
-    where: {
-      barbershopId: session.user.barbershopId,
-      isActive: true
-    },
-    select: {
-      id: true,
-      name: true
-    },
-    orderBy: {
-      name: "asc"
-    }
-  })
+  const db = getDb()
+  const barbers = db.barbers
+    .filter(b => b.barbershopId === session.user.barbershopId && b.isActive)
+    .map(b => ({
+      id: b.id,
+      name: b.name
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   return <AppointmentsScreen barbers={barbers} />
 }

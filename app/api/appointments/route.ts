@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { parseISO, startOfDay, endOfDay, isBefore } from "date-fns"
-import { Prisma } from "@prisma/client"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
+import { getDb, generateId, AppointmentStatus } from "@/lib/mock-db"
 import { appointmentCreateSchema } from "@/lib/validations/appointment"
 import { getCurrentSession } from "@/lib/auth"
 
@@ -17,48 +16,50 @@ export async function GET(request: Request) {
   const barberId = searchParams.get("barberId")
   const status = searchParams.get("status")
 
-  const filters: Prisma.AppointmentWhereInput = {
-    barbershopId: session.user.barbershopId
-  }
+  const db = getDb()
+  let appointments = db.appointments.filter(a => a.barbershopId === session.user.barbershopId)
 
   if (status && ["CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(status)) {
-    filters.status = status as "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
+    appointments = appointments.filter(a => a.status === status)
   }
 
   if (barberId) {
-    filters.barberId = barberId
+    appointments = appointments.filter(a => a.barberId === barberId)
   }
 
   if (date) {
     const parsedDate = parseISO(date)
-    filters.date = {
-      gte: startOfDay(parsedDate),
-      lte: endOfDay(parsedDate)
-    }
+    const start = startOfDay(parsedDate)
+    const end = endOfDay(parsedDate)
+    appointments = appointments.filter(a => a.date >= start && a.date <= end)
   }
 
-  const appointments = await prisma.appointment.findMany({
-    where: filters,
-    orderBy: {
-      startTime: "asc"
-    },
-    include: {
-      client: true,
-      barber: true,
-      services: {
-        include: {
-          service: true
-        }
-      },
-      products: {
-        include: {
-          product: true
-        }
-      }
-    }
-  })
+  const result = appointments
+    .map(appointment => ({
+      ...appointment,
+      client: db.clients.find(c => c.id === appointment.clientId)!,
+      barber: db.barbers.find(b => b.id === appointment.barberId)!,
+      services: db.appointmentServices
+        .filter(as => as.appointmentId === appointment.id)
+        .map(as => ({
+          appointmentId: as.appointmentId,
+          serviceId: as.serviceId,
+          price: as.price,
+          service: db.services.find(s => s.id === as.serviceId)!
+        })),
+      products: db.appointmentProducts
+        .filter(ap => ap.appointmentId === appointment.id)
+        .map(ap => ({
+          appointmentId: ap.appointmentId,
+          productId: ap.productId,
+          quantity: ap.quantity,
+          unitPrice: ap.unitPrice,
+          product: db.products.find(p => p.id === ap.productId)!
+        }))
+    }))
+    .sort((a, b) => a.startTime.localeCompare(b.startTime))
 
-  return NextResponse.json({ success: true, data: appointments })
+  return NextResponse.json({ success: true, data: result })
 }
 
 export async function POST(request: Request) {
@@ -84,17 +85,11 @@ export async function POST(request: Request) {
       )
     }
 
-    const barber = await prisma.barber.findFirst({
-      where: {
-        id: data.barberId,
-        barbershopId: session.user.barbershopId,
-        isActive: true
-      },
-      include: {
-        barberServices: true,
-        workingHours: true
-      }
-    })
+    const db = getDb()
+    const barber = db.barbers.find(
+      b => b.id === data.barberId && b.barbershopId === session.user.barbershopId && b.isActive
+    )
+
     if (!barber) {
       return NextResponse.json(
         { success: false, error: "Barbeiro não encontrado ou inativo" },
@@ -102,13 +97,9 @@ export async function POST(request: Request) {
       )
     }
 
-    const services = await prisma.service.findMany({
-      where: {
-        id: { in: data.serviceIds },
-        barbershopId: session.user.barbershopId,
-        isActive: true
-      }
-    })
+    const services = db.services.filter(
+      s => data.serviceIds.includes(s.id) && s.barbershopId === session.user.barbershopId && s.isActive
+    )
 
     if (services.length !== data.serviceIds.length) {
       return NextResponse.json(
@@ -117,7 +108,9 @@ export async function POST(request: Request) {
       )
     }
 
-    const barberServiceIds = new Set(barber.barberServices.map(item => item.serviceId))
+    const barberServiceIds = new Set(
+      db.barberServices.filter(bs => bs.barberId === barber.id).map(bs => bs.serviceId)
+    )
     const barberHasAll = services.every(service => barberServiceIds.has(service.id))
     if (!barberHasAll) {
       return NextResponse.json(
@@ -134,8 +127,8 @@ export async function POST(request: Request) {
     ).padStart(2, "0")}`
 
     const dayOfWeek = startDateTime.getDay()
-    const workingHour = barber.workingHours.find(
-      slot => slot.dayOfWeek === dayOfWeek && slot.isActive
+    const workingHour = db.workingHours.find(
+      slot => slot.barberId === barber.id && slot.dayOfWeek === dayOfWeek && slot.isActive
     )
     if (!workingHour) {
       return NextResponse.json(
@@ -144,42 +137,21 @@ export async function POST(request: Request) {
       )
     }
 
-    if (
-      workingHour.startTime > data.startTime ||
-      workingHour.endTime < endTime
-    ) {
+    if (workingHour.startTime > data.startTime || workingHour.endTime < endTime) {
       return NextResponse.json(
         { success: false, error: "Horário fora da jornada do barbeiro" },
         { status: 400 }
       )
     }
 
-    const conflicting = await prisma.appointment.findFirst({
-      where: {
-        barbershopId: session.user.barbershopId,
-        barberId: data.barberId,
-        date: {
-          gte: startOfDay(appointmentDate),
-          lte: endOfDay(appointmentDate)
-        },
-        status: {
-          in: ["CONFIRMED", "IN_PROGRESS", "COMPLETED"]
-        },
-        NOT: {
-          OR: [
-            {
-              endTime: {
-                lte: data.startTime
-              }
-            },
-            {
-              startTime: {
-                gte: endTime
-              }
-            }
-          ]
-        }
-      }
+    const start = startOfDay(appointmentDate)
+    const end = endOfDay(appointmentDate)
+    const conflicting = db.appointments.find(a => {
+      if (a.barbershopId !== session.user.barbershopId) return false
+      if (a.barberId !== data.barberId) return false
+      if (a.date < start || a.date > end) return false
+      if (!["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(a.status)) return false
+      return !(a.endTime <= data.startTime || a.startTime >= endTime)
     })
 
     if (conflicting) {
@@ -191,16 +163,17 @@ export async function POST(request: Request) {
 
     let clientId = data.clientId
     if (!clientId && data.newClient) {
-      const client = await prisma.client.create({
-        data: {
-          name: data.newClient.name,
-          phone: data.newClient.phone,
-          email: data.newClient.email,
-          notes: data.newClient.notes,
-          barbershopId: session.user.barbershopId
-        }
+      clientId = generateId()
+      db.clients.push({
+        id: clientId,
+        name: data.newClient.name,
+        phone: data.newClient.phone,
+        email: data.newClient.email,
+        notes: data.newClient.notes,
+        barbershopId: session.user.barbershopId,
+        createdAt: new Date(),
+        updatedAt: new Date()
       })
-      clientId = client.id
     }
 
     if (!clientId) {
@@ -210,40 +183,48 @@ export async function POST(request: Request) {
       )
     }
 
-    const appointment = await prisma.appointment.create({
-      data: {
-        date: appointmentDate,
-        startTime: data.startTime,
-        endTime,
-        status: "CONFIRMED",
-        notes: data.notes,
-        clientId,
-        barberId: data.barberId,
-        barbershopId: session.user.barbershopId,
-        services: {
-          create: services.map(service => ({
-            serviceId: service.id,
-            price: service.price
-          }))
-        }
-      },
-      include: {
-        client: true,
-        barber: true,
-        services: {
-          include: {
-            service: true
-          }
-        },
-        products: {
-          include: {
-            product: true
-          }
-        }
-      }
+    const appointmentId = generateId()
+
+    const appointment = {
+      id: appointmentId,
+      date: appointmentDate,
+      startTime: data.startTime,
+      endTime,
+      status: "CONFIRMED" as AppointmentStatus,
+      notes: data.notes,
+      clientId,
+      barberId: data.barberId,
+      barbershopId: session.user.barbershopId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+
+    db.appointments.push(appointment)
+
+    services.forEach(service => {
+      db.appointmentServices.push({
+        appointmentId,
+        serviceId: service.id,
+        price: service.price
+      })
     })
 
-    return NextResponse.json({ success: true, data: appointment })
+    const result = {
+      ...appointment,
+      client: db.clients.find(c => c.id === clientId)!,
+      barber,
+      services: db.appointmentServices
+        .filter(as => as.appointmentId === appointmentId)
+        .map(as => ({
+          appointmentId: as.appointmentId,
+          serviceId: as.serviceId,
+          price: as.price,
+          service: db.services.find(s => s.id === as.serviceId)!
+        })),
+      products: []
+    }
+
+    return NextResponse.json({ success: true, data: result })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -257,4 +238,3 @@ export async function POST(request: Request) {
     )
   }
 }
-
