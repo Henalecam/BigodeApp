@@ -193,6 +193,36 @@ export const mockDb: MockDatabase = {
       barbershopId,
       createdAt: new Date("2024-01-15"),
       updatedAt: new Date("2024-01-15")
+    },
+    {
+      id: "barber-4",
+      name: "Felipe Mendes",
+      phone: "+55 11 95555-3333",
+      commissionRate: 48,
+      isActive: true,
+      barbershopId,
+      createdAt: new Date("2024-02-01"),
+      updatedAt: new Date("2024-02-01")
+    },
+    {
+      id: "barber-5",
+      name: "Marcelo Costa",
+      phone: "+55 11 94444-2222",
+      commissionRate: 52,
+      isActive: true,
+      barbershopId,
+      createdAt: new Date("2024-02-15"),
+      updatedAt: new Date("2024-02-15")
+    },
+    {
+      id: "barber-6",
+      name: "Rafael Oliveira",
+      phone: "+55 11 93333-1111",
+      commissionRate: 47,
+      isActive: false,
+      barbershopId,
+      createdAt: new Date("2024-01-10"),
+      updatedAt: new Date("2024-05-01")
     }
   ],
   workingHours: [
@@ -211,7 +241,17 @@ export const mockDb: MockDatabase = {
     { id: "wh-13", barberId: "barber-3", dayOfWeek: 3, startTime: "08:00", endTime: "17:00", isActive: true },
     { id: "wh-14", barberId: "barber-3", dayOfWeek: 4, startTime: "08:00", endTime: "17:00", isActive: true },
     { id: "wh-15", barberId: "barber-3", dayOfWeek: 5, startTime: "08:00", endTime: "17:00", isActive: true },
-    { id: "wh-16", barberId: "barber-3", dayOfWeek: 6, startTime: "08:00", endTime: "14:00", isActive: true }
+    { id: "wh-16", barberId: "barber-3", dayOfWeek: 6, startTime: "08:00", endTime: "14:00", isActive: true },
+    { id: "wh-17", barberId: "barber-4", dayOfWeek: 1, startTime: "09:00", endTime: "18:00", isActive: true },
+    { id: "wh-18", barberId: "barber-4", dayOfWeek: 2, startTime: "09:00", endTime: "18:00", isActive: true },
+    { id: "wh-19", barberId: "barber-4", dayOfWeek: 3, startTime: "09:00", endTime: "18:00", isActive: true },
+    { id: "wh-20", barberId: "barber-4", dayOfWeek: 4, startTime: "09:00", endTime: "18:00", isActive: true },
+    { id: "wh-21", barberId: "barber-4", dayOfWeek: 6, startTime: "09:00", endTime: "15:00", isActive: true },
+    { id: "wh-22", barberId: "barber-5", dayOfWeek: 2, startTime: "10:00", endTime: "19:00", isActive: true },
+    { id: "wh-23", barberId: "barber-5", dayOfWeek: 3, startTime: "10:00", endTime: "19:00", isActive: true },
+    { id: "wh-24", barberId: "barber-5", dayOfWeek: 4, startTime: "10:00", endTime: "19:00", isActive: true },
+    { id: "wh-25", barberId: "barber-5", dayOfWeek: 5, startTime: "10:00", endTime: "19:00", isActive: true },
+    { id: "wh-26", barberId: "barber-5", dayOfWeek: 6, startTime: "10:00", endTime: "17:00", isActive: true }
   ],
   clients: [
     {
@@ -372,7 +412,14 @@ export const mockDb: MockDatabase = {
     { barberId: "barber-2", serviceId: "service-1" },
     { barberId: "barber-2", serviceId: "service-2" },
     { barberId: "barber-3", serviceId: "service-1" },
-    { barberId: "barber-3", serviceId: "service-3" }
+    { barberId: "barber-3", serviceId: "service-3" },
+    { barberId: "barber-4", serviceId: "service-1" },
+    { barberId: "barber-4", serviceId: "service-2" },
+    { barberId: "barber-4", serviceId: "service-4" },
+    { barberId: "barber-5", serviceId: "service-1" },
+    { barberId: "barber-5", serviceId: "service-3" },
+    { barberId: "barber-6", serviceId: "service-2" },
+    { barberId: "barber-6", serviceId: "service-4" }
   ],
   appointments: [
     { id: "appointment-1", date: new Date(), startTime: "10:00", endTime: "11:15", status: "CONFIRMED", clientId: "client-1", barberId: "barber-1", barbershopId, createdAt: new Date(), updatedAt: new Date() },
@@ -413,7 +460,14 @@ export const mockDb: MockDatabase = {
     { id: "product-5", name: "Gel Fixador Forte", stock: 20, minStock: 8, salePrice: 32, isActive: true, barbershopId, createdAt: new Date("2024-02-01"), updatedAt: new Date("2024-02-01") },
     { id: "product-6", name: "Balm Pós-Barba", stock: 15, minStock: 5, salePrice: 42, isActive: true, barbershopId, createdAt: new Date("2024-02-10"), updatedAt: new Date("2024-02-10") },
     { id: "product-7", name: "Shampoo Anticaspa", stock: 2, minStock: 6, salePrice: 45, isActive: true, barbershopId, createdAt: new Date("2024-03-01"), updatedAt: new Date("2024-03-01") },
-    { id: "product-8", name: "Condicionador", stock: 18, minStock: 7, salePrice: 38, isActive: true, barbershopId, createdAt: new Date("2024-03-15"), updatedAt: new Date("2024-03-15") }
+    { id: "product-8", name: "Condicionador", stock: 18, minStock: 7, salePrice: 38, isActive: true, barbershopId, createdAt: new Date("2024-03-15"), updatedAt: new Date("2024-03-15") },
+    { id: "product-9", name: "Spray Texturizador", stock: 35, minStock: 10, salePrice: 48, isActive: true, barbershopId, createdAt: new Date("2024-03-20"), updatedAt: new Date("2024-03-20") },
+    { id: "product-10", name: "Pó Matificante", stock: 22, minStock: 8, salePrice: 52, isActive: true, barbershopId, createdAt: new Date("2024-04-01"), updatedAt: new Date("2024-04-01") },
+    { id: "product-11", name: "Leave-in Hidratante", stock: 28, minStock: 9, salePrice: 44, isActive: true, barbershopId, createdAt: new Date("2024-04-10"), updatedAt: new Date("2024-04-10") },
+    { id: "product-12", name: "Óleo Finalizador", stock: 19, minStock: 6, salePrice: 49, isActive: true, barbershopId, createdAt: new Date("2024-04-15"), updatedAt: new Date("2024-04-15") },
+    { id: "product-13", name: "Sabonete para Barba", stock: 45, minStock: 12, salePrice: 28, isActive: true, barbershopId, createdAt: new Date("2024-05-01"), updatedAt: new Date("2024-05-01") },
+    { id: "product-14", name: "Máscara Capilar", stock: 12, minStock: 5, salePrice: 55, isActive: true, barbershopId, createdAt: new Date("2024-05-10"), updatedAt: new Date("2024-05-10") },
+    { id: "product-15", name: "Creme de Pentear", stock: 38, minStock: 10, salePrice: 36, isActive: true, barbershopId, createdAt: new Date("2024-05-20"), updatedAt: new Date("2024-05-20") }
   ],
   appointmentProducts: [
     { appointmentId: "appointment-2", productId: "product-1", quantity: 1, unitPrice: 35 },

@@ -18,7 +18,7 @@ export function Header({ user }: HeaderProps) {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className="relative z-20 flex h-16 items-center border-b border-primary/10 bg-white/80 backdrop-blur-xl px-4 shadow-sm">
+    <header className="sticky top-0 z-30 flex h-16 items-center border-b border-primary/10 bg-white/80 backdrop-blur-xl px-4 shadow-sm">
       <div className="flex flex-1 items-center gap-4">
         <Button
           variant="ghost"

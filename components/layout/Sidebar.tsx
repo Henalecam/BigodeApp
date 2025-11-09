@@ -93,12 +93,12 @@ export function Sidebar({ role }: { role: Role }) {
   const pathname = usePathname()
 
   return (
-    <aside className="relative z-20 hidden h-screen w-64 flex-col border-r border-primary/10 bg-white/95 backdrop-blur-xl px-4 py-6 shadow-xl lg:flex">
+    <aside className="fixed left-0 top-0 z-20 hidden h-screen w-64 flex-col border-r border-primary/10 bg-white/95 backdrop-blur-xl px-4 py-6 shadow-xl lg:flex">
       <Link href="/dashboard" className="mb-8 flex items-center gap-2 rounded-lg bg-gradient-to-r from-secondary to-accent p-3 text-lg font-bold text-white shadow-lg transition hover:shadow-glow">
         <UserSquare2 className="h-6 w-6" />
         BarberPro
       </Link>
-      <nav className="flex flex-1 flex-col gap-1 text-sm">
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto text-sm">
         {navItems
           .filter(item => item.roles.includes(role))
           .map(item => {
