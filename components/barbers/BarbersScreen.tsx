@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
@@ -47,11 +47,11 @@ export function BarbersScreen({ initialBarbers, services, canManage }: BarbersSc
   const [editingId, setEditingId] = useState<string | null>(null)
 
   // Update barbers when initialBarbers changes
-  useState(() => {
+  useEffect(() => {
     if (initialBarbers.length > 0 && barbers.length === 0) {
       setBarbers(initialBarbers)
     }
-  })
+  }, [initialBarbers, barbers.length])
 
   const editingBarber = useMemo(() => barbers.find(barber => barber.id === editingId), [barbers, editingId])
 
