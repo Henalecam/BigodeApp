@@ -27,7 +27,7 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   {
     label: "Dashboard",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutDashboard,
     roles: ["ADMIN", "BARBER"]
   },
@@ -94,7 +94,7 @@ export function Sidebar({ role }: { role: Role }) {
 
   return (
     <aside className="hidden h-screen w-64 flex-col border-r border-primary/10 bg-white px-4 py-6 lg:flex">
-      <Link href="/" className="mb-8 flex items-center gap-2 text-lg font-semibold text-primary">
+      <Link href="/dashboard" className="mb-8 flex items-center gap-2 text-lg font-semibold text-primary">
         <UserSquare2 className="h-6 w-6" />
         BarberPro
       </Link>

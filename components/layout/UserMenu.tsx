@@ -1,6 +1,6 @@
 "use client"
 
-import { signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { useSession } from "@/lib/session-store"
 
 type UserMenuProps = {
   user: {
@@ -21,12 +23,21 @@ type UserMenuProps = {
 }
 
 export function UserMenu({ user }: UserMenuProps) {
+  const router = useRouter()
+  const { role, setRole } = useSession()
+  
   const initials = user.name
     .split(" ")
     .map(part => part[0])
     .join("")
     .slice(0, 2)
     .toUpperCase()
+
+  const handleToggleRole = () => {
+    const newRole = role === "ADMIN" ? "BARBER" : "ADMIN"
+    setRole(newRole)
+    router.refresh()
+  }
 
   return (
     <DropdownMenu>
@@ -42,12 +53,19 @@ export function UserMenu({ user }: UserMenuProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="flex flex-col text-sm">
-          <span className="font-semibold">{user.name}</span>
-          {user.email ? <span className="text-xs text-neutral-500">{user.email}</span> : null}
+        <DropdownMenuLabel className="flex flex-col gap-2 text-sm">
+          <div>
+            <span className="font-semibold">{user.name}</span>
+            {user.email ? <span className="block text-xs text-neutral-500">{user.email}</span> : null}
+          </div>
+          <Badge variant={role === "ADMIN" ? "default" : "success"}>
+            {role === "ADMIN" ? "Modo: Administrador" : "Modo: Barbeiro"}
+          </Badge>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/login" })}>Sair</DropdownMenuItem>
+        <DropdownMenuItem onSelect={handleToggleRole}>
+          Alternar para {role === "ADMIN" ? "Barbeiro" : "Administrador"}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

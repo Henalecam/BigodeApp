@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server"
 import { getDashboardData } from "@/lib/dashboard-data"
-import { getCurrentSession } from "@/lib/auth"
 
-export async function GET() {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const role = searchParams.get("role") as "ADMIN" | "BARBER" || "ADMIN"
 
   const data = await getDashboardData({
-    barbershopId: session.user.barbershopId,
-    role: session.user.role as "ADMIN" | "BARBER",
-    userId: session.user.id
+    barbershopId: "barbershop-1",
+    role,
+    userId: "user-admin-1"
   })
 
   return NextResponse.json({
