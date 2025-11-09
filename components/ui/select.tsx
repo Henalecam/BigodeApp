@@ -16,7 +16,7 @@ const SelectTrigger = React.forwardRef<
   <RadixSelect.Trigger
     ref={ref}
     className={cn(
-      "flex h-10 w-full items-center justify-between rounded-md border border-primary/20 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+      "flex h-10 w-full items-center justify-between rounded-lg border border-primary/20 bg-white px-4 py-2 text-sm focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:ring-offset-0 transition-all",
       className
     )}
     {...props}
@@ -35,7 +35,7 @@ const SelectContent = React.forwardRef<
     <RadixSelect.Content
       ref={ref}
       className={cn(
-        "z-50 min-w-[8rem] overflow-hidden rounded-md border border-primary/10 bg-white shadow-md",
+        "z-50 min-w-[8rem] overflow-hidden rounded-lg border border-primary/10 bg-white/95 backdrop-blur-md shadow-xl",
         position === "popper" && "translate-y-1",
         className
       )}
@@ -63,14 +63,14 @@ const SelectItem = React.forwardRef<
   <RadixSelect.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm px-3 py-2 text-sm focus:bg-primary/10 focus:outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex w-full cursor-default select-none items-center rounded-md px-3 py-2 text-sm focus:bg-gradient-to-r focus:from-secondary/10 focus:to-accent/10 focus:outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-colors",
       className
     )}
     {...props}
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <RadixSelect.ItemIndicator>
-        <Check className="h-4 w-4" />
+        <Check className="h-4 w-4 text-accent" />
       </RadixSelect.ItemIndicator>
     </span>
     <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
