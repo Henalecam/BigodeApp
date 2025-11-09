@@ -76,12 +76,12 @@ export function AppointmentsScreen({ barbers }: { barbers: BarberOption[] }) {
         indicators={indicators}
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Select value={barberId} onValueChange={value => setBarberId(value)}>
+        <Select value={barberId || "all"} onValueChange={value => setBarberId(value === "all" ? "" : value)}>
           <SelectTrigger>
             <SelectValue placeholder="Todos os barbeiros" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
             {barbers.map(barber => (
               <SelectItem key={barber.id} value={barber.id}>
                 {barber.name}
@@ -89,12 +89,12 @@ export function AppointmentsScreen({ barbers }: { barbers: BarberOption[] }) {
             ))}
           </SelectContent>
         </Select>
-        <Select value={status} onValueChange={value => setStatus(value)}>
+        <Select value={status || "all"} onValueChange={value => setStatus(value === "all" ? "" : value)}>
           <SelectTrigger>
             <SelectValue placeholder="Todos os status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="CONFIRMED">Confirmado</SelectItem>
             <SelectItem value="IN_PROGRESS">Em andamento</SelectItem>
             <SelectItem value="COMPLETED">Concluído</SelectItem>

@@ -1,22 +1,24 @@
-import { redirect } from "next/navigation"
-import { getCurrentSession } from "@/lib/auth"
+"use client"
+
+import { useEffect, useState } from "react"
 import { getDb } from "@/lib/mock-db"
 import { CommissionsReport } from "@/components/reports/CommissionsReport"
 
-export default async function CommissionsPage() {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    redirect("/")
-  }
+export default function CommissionsPage() {
+  const [barbers, setBarbers] = useState<Array<{ id: string; name: string }>>([])
 
-  const db = getDb()
-  const barbers = db.barbers
-    .filter(b => b.barbershopId === session.user.barbershopId)
-    .map(b => ({
-      id: b.id,
-      name: b.name
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name))
+  useEffect(() => {
+    const db = getDb()
+    const barbersData = db.barbers
+      .filter(b => b.barbershopId === "barbershop-1")
+      .map(b => ({
+        id: b.id,
+        name: b.name
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    setBarbers(barbersData)
+  }, [])
 
   return (
     <div className="space-y-6">

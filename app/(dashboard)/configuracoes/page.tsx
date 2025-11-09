@@ -1,20 +1,29 @@
-import { redirect } from "next/navigation"
-import { getCurrentSession } from "@/lib/auth"
+"use client"
+
+import { useEffect, useState } from "react"
 import { getDb } from "@/lib/mock-db"
 import { SettingsScreen } from "@/components/settings/SettingsScreen"
+import { useSession } from "@/lib/session-store"
+import { Skeleton } from "@/components/ui/skeleton"
 
-export default async function SettingsPage() {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    redirect("/")
-  }
+export default function SettingsPage() {
+  const { role } = useSession()
+  const [loading, setLoading] = useState(true)
+  const [barbershop, setBarbershop] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
 
-  const db = getDb()
-  const barbershop = db.barbershops.find(b => b.id === session.user.barbershopId)
-  const user = db.users.find(u => u.id === session.user.id)
+  useEffect(() => {
+    const db = getDb()
+    const barbershopData = db.barbershops.find(b => b.id === "barbershop-1")
+    const userData = db.users.find(u => u.id === "user-admin-1")
 
-  if (!barbershop || !user) {
-    redirect("/")
+    setBarbershop(barbershopData)
+    setUser(userData)
+    setLoading(false)
+  }, [])
+
+  if (loading || !barbershop || !user) {
+    return <Skeleton className="h-screen w-full" />
   }
 
   return (
@@ -33,7 +42,7 @@ export default async function SettingsPage() {
           name: user.name,
           email: user.email
         }}
-        canManageBarbershop={session.user.role === "ADMIN"}
+        canManageBarbershop={role === "ADMIN"}
       />
     </div>
   )

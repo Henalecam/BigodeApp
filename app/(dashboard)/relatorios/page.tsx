@@ -1,6 +1,9 @@
+"use client"
+
 import Link from "next/link"
-import { redirect } from "next/navigation"
-import { getCurrentSession } from "@/lib/auth"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
+import { useSession } from "@/lib/session-store"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -21,11 +24,17 @@ const reportLinks: Array<{
   }
 ]
 
-export default async function ReportsPage() {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    redirect("/")
-  }
+export default function ReportsPage() {
+  const { role } = useSession()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (role !== "ADMIN") {
+      router.push("/dashboard")
+    }
+  }, [role, router])
+
+  if (role !== "ADMIN") return null
 
   return (
     <div className="space-y-6">
@@ -53,7 +62,3 @@ export default async function ReportsPage() {
     </div>
   )
 }
-
-
-
-

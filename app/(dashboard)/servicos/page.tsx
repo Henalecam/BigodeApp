@@ -1,27 +1,29 @@
-import { redirect } from "next/navigation"
-import { getCurrentSession } from "@/lib/auth"
+"use client"
+
+import { useEffect, useState } from "react"
 import { getDb } from "@/lib/mock-db"
 import { ServicesScreen } from "@/components/services/ServicesScreen"
+import { useSession } from "@/lib/session-store"
 
-export default async function ServicesPage() {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    redirect("/login")
-  }
+export default function ServicesPage() {
+  const { role } = useSession()
+  const [services, setServices] = useState<any[]>([])
 
-  const db = getDb()
-  const services = db.services
-    .filter(s => s.barbershopId === session.user.barbershopId)
-    .sort((a, b) => a.name.localeCompare(b.name))
+  useEffect(() => {
+    const db = getDb()
+    const servicesData = db.services
+      .filter(s => s.barbershopId === "barbershop-1")
+      .map(service => ({
+        id: service.id,
+        name: service.name,
+        duration: service.duration,
+        price: service.price,
+        isActive: service.isActive
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name))
 
-  const formatted = services.map(service => ({
-    id: service.id,
-    name: service.name,
-    duration: service.duration,
-    price: service.price,
-    isActive: service.isActive
-  }))
+    setServices(servicesData)
+  }, [])
 
-  return <ServicesScreen services={formatted} canManage={session.user.role === "ADMIN"} />
+  return <ServicesScreen services={services} canManage={role === "ADMIN"} />
 }
-

@@ -1,13 +1,8 @@
-import { redirect } from "next/navigation"
-import { getCurrentSession } from "@/lib/auth"
+"use client"
+
 import { RevenueReport } from "@/components/reports/RevenueReport"
 
-export default async function RevenuePage() {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    redirect("/")
-  }
-
+export default function RevenuePage() {
   return (
     <div className="space-y-6">
       <div>

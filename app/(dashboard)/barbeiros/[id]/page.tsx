@@ -1,50 +1,59 @@
-import { redirect } from "next/navigation"
-import { getCurrentSession } from "@/lib/auth"
+"use client"
+
+import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
 import { getDb } from "@/lib/mock-db"
 import { BarberDetail } from "@/components/barbers/BarberDetail"
+import { Skeleton } from "@/components/ui/skeleton"
 
-type PageProps = {
-  params: {
-    id: string
-  }
-}
+export default function BarberDetailPage() {
+  const params = useParams()
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [barber, setBarber] = useState<any>(null)
+  const [services, setServices] = useState<any[]>([])
 
-export default async function BarberDetailPage({ params }: PageProps) {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    redirect("/barbeiros")
-  }
+  useEffect(() => {
+    const db = getDb()
+    const barberData = db.barbers.find(
+      b => b.id === params.id && b.barbershopId === "barbershop-1"
+    )
 
-  const db = getDb()
-  const barber = db.barbers.find(
-    b => b.id === params.id && b.barbershopId === session.user.barbershopId
-  )
+    if (!barberData) {
+      router.push("/barbeiros")
+      return
+    }
 
-  if (!barber) {
-    redirect("/barbeiros")
-  }
+    const barberWithRelations = {
+      ...barberData,
+      workingHours: db.workingHours.filter(wh => wh.barberId === barberData.id),
+      barberServices: db.barberServices
+        .filter(bs => bs.barberId === barberData.id)
+        .map(bs => ({
+          barberId: bs.barberId,
+          serviceId: bs.serviceId,
+          service: db.services.find(s => s.id === bs.serviceId)!
+        }))
+    }
 
-  const barberWithRelations = {
-    ...barber,
-    workingHours: db.workingHours.filter(wh => wh.barberId === barber.id),
-    barberServices: db.barberServices
-      .filter(bs => bs.barberId === barber.id)
-      .map(bs => ({
-        barberId: bs.barberId,
-        serviceId: bs.serviceId,
-        service: db.services.find(s => s.id === bs.serviceId)!
+    const servicesData = db.services
+      .filter(s => s.barbershopId === "barbershop-1" && s.isActive)
+      .map(service => ({
+        id: service.id,
+        name: service.name
       }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    setBarber(barberWithRelations)
+    setServices(servicesData)
+    setLoading(false)
+  }, [params.id, router])
+
+  if (loading) {
+    return <Skeleton className="h-screen w-full" />
   }
 
-  const services = db.services
-    .filter(s => s.barbershopId === session.user.barbershopId && s.isActive)
-    .sort((a, b) => a.name.localeCompare(b.name))
+  if (!barber) return null
 
-  const formattedServices = services.map(service => ({
-    id: service.id,
-    name: service.name
-  }))
-
-  return <BarberDetail barber={barberWithRelations} services={formattedServices} />
+  return <BarberDetail barber={barber} services={services} />
 }
-

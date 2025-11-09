@@ -87,12 +87,12 @@ export function CommissionsReport({ barbers }: CommissionsReportProps) {
         </div>
         <div className="flex flex-col">
           <label className="text-xs text-neutral-500">Barbeiro</label>
-          <Select value={barberId} onValueChange={value => setBarberId(value)}>
+          <Select value={barberId || "all"} onValueChange={value => setBarberId(value === "all" ? "" : value)}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
               {barbers.map(barber => (
                 <SelectItem key={barber.id} value={barber.id}>
                   {barber.name}

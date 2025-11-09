@@ -1,28 +1,30 @@
-import { redirect } from "next/navigation"
-import { getCurrentSession } from "@/lib/auth"
+"use client"
+
+import { useEffect, useState } from "react"
 import { getDb } from "@/lib/mock-db"
 import { ProductsScreen } from "@/components/products/ProductsScreen"
+import { useSession } from "@/lib/session-store"
 
-export default async function ProductsPage() {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    redirect("/login")
-  }
+export default function ProductsPage() {
+  const { role } = useSession()
+  const [products, setProducts] = useState<any[]>([])
 
-  const db = getDb()
-  const products = db.products
-    .filter(p => p.barbershopId === session.user.barbershopId)
-    .sort((a, b) => a.name.localeCompare(b.name))
+  useEffect(() => {
+    const db = getDb()
+    const productsData = db.products
+      .filter(p => p.barbershopId === "barbershop-1")
+      .map(product => ({
+        id: product.id,
+        name: product.name,
+        stock: product.stock,
+        minStock: product.minStock,
+        salePrice: product.salePrice,
+        isActive: product.isActive
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name))
 
-  const formatted = products.map(product => ({
-    id: product.id,
-    name: product.name,
-    stock: product.stock,
-    minStock: product.minStock,
-    salePrice: product.salePrice,
-    isActive: product.isActive
-  }))
+    setProducts(productsData)
+  }, [])
 
-  return <ProductsScreen products={formatted} canManage={session.user.role === "ADMIN"} />
+  return <ProductsScreen products={products} canManage={role === "ADMIN"} />
 }
-

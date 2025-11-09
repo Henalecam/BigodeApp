@@ -93,8 +93,8 @@ export function Sidebar({ role }: { role: Role }) {
   const pathname = usePathname()
 
   return (
-    <aside className="hidden h-screen w-64 flex-col border-r border-primary/10 bg-white px-4 py-6 lg:flex">
-      <Link href="/dashboard" className="mb-8 flex items-center gap-2 text-lg font-semibold text-primary">
+    <aside className="relative z-20 hidden h-screen w-64 flex-col border-r border-primary/10 bg-white/95 backdrop-blur-xl px-4 py-6 shadow-xl lg:flex">
+      <Link href="/dashboard" className="mb-8 flex items-center gap-2 rounded-lg bg-gradient-to-r from-secondary to-accent p-3 text-lg font-bold text-white shadow-lg transition hover:shadow-glow">
         <UserSquare2 className="h-6 w-6" />
         BarberPro
       </Link>
@@ -109,11 +109,11 @@ export function Sidebar({ role }: { role: Role }) {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 transition hover:bg-primary/5",
-                    isActive && "bg-primary/10 text-primary"
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium transition-all hover:bg-gradient-to-r hover:from-secondary/10 hover:to-accent/10 hover:shadow-sm",
+                    isActive && "bg-gradient-to-r from-secondary/20 to-accent/20 text-primary shadow-md"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className={cn("h-4 w-4", isActive && "text-accent")} />
                   {item.label}
                 </Link>
                 {item.children && isActive ? (
@@ -128,8 +128,8 @@ export function Sidebar({ role }: { role: Role }) {
                             key={child.href}
                             href={child.href}
                             className={cn(
-                              "flex items-center gap-2 rounded-md px-2 py-1 text-xs text-neutral-600 transition hover:bg-primary/5 hover:text-primary",
-                              childActive && "bg-primary/10 text-primary"
+                              "flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-neutral-600 transition hover:bg-accent/10 hover:text-accent",
+                              childActive && "bg-accent/20 text-accent font-medium"
                             )}
                           >
                             <ChildIcon className="h-3 w-3" />
