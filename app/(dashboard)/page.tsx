@@ -9,8 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "@/lib/session-store"
 import type { DashboardData } from "@/lib/dashboard-data"
 
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 const statusLabel: Record<string, string> = {
   CONFIRMED: "Confirmado",
