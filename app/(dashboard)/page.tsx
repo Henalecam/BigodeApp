@@ -117,16 +117,16 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <div className="space-y-4 rounded-lg border border-primary/10 bg-white p-6">
+        <div className="space-y-4 rounded-2xl border border-primary/10 bg-white/95 backdrop-blur-md shadow-lg p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-primary">Faturamento dos últimos 7 dias</h2>
+            <h2 className="text-lg font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">Faturamento dos últimos 7 dias</h2>
             <span className="text-xs text-neutral-500">Valores consolidados por dia</span>
           </div>
           <RevenueChart data={data.revenueTrend} />
         </div>
-        <div className="space-y-4 rounded-lg border border-primary/10 bg-white p-6">
+        <div className="space-y-4 rounded-2xl border border-primary/10 bg-white/95 backdrop-blur-md shadow-lg p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-primary">Top barbeiros</h2>
+            <h2 className="text-lg font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">Top barbeiros</h2>
             <span className="text-xs text-neutral-500">Últimos 30 dias</span>
           </div>
           <TopBarbersTable data={data.topBarbers} />
@@ -134,9 +134,9 @@ export default function DashboardPage() {
       </div>
 
       <div className={`grid gap-6 ${showLowStock ? "lg:grid-cols-2" : ""}`}>
-        <div className="space-y-4 rounded-lg border border-primary/10 bg-white p-6">
+        <div className="space-y-4 rounded-2xl border border-primary/10 bg-white/95 backdrop-blur-md shadow-lg p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-primary">Próximos atendimentos</h2>
+            <h2 className="text-lg font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">Próximos atendimentos</h2>
             <span className="text-xs text-neutral-500">Somente para hoje</span>
           </div>
           {data.upcomingAppointments.length ? (
@@ -144,13 +144,13 @@ export default function DashboardPage() {
               {data.upcomingAppointments.map(appointment => (
                 <div
                   key={appointment.id}
-                  className="flex flex-col gap-1 rounded-md border border-primary/10 p-4 transition hover:border-primary/30"
+                  className="flex flex-col gap-1 rounded-xl border border-primary/10 bg-gradient-to-r from-white to-neutral-50 p-4 transition-all hover:shadow-md hover:scale-[1.02]"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-primary">{appointment.startTime}</p>
+                    <p className="text-sm font-bold text-primary">{appointment.startTime}</p>
                     <Badge variant={statusVariant[appointment.status]}>{statusLabel[appointment.status]}</Badge>
                   </div>
-                  <p className="text-sm text-neutral-600">{appointment.clientName}</p>
+                  <p className="text-sm font-semibold text-neutral-700">{appointment.clientName}</p>
                   <p className="text-xs text-neutral-500">Barbeiro: {appointment.barberName}</p>
                   <p className="text-xs text-neutral-500">{appointment.services.join(", ")}</p>
                 </div>
@@ -161,20 +161,20 @@ export default function DashboardPage() {
           )}
         </div>
         {showLowStock ? (
-          <div className="space-y-4 rounded-lg border border-primary/10 bg-white p-6">
+          <div className="space-y-4 rounded-2xl border border-primary/10 bg-white/95 backdrop-blur-md shadow-lg p-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-primary">Estoque crítico</h2>
+              <h2 className="text-lg font-bold bg-gradient-to-r from-danger to-warning bg-clip-text text-transparent">Estoque crítico</h2>
               <span className="text-xs text-neutral-500">Produtos abaixo do mínimo</span>
             </div>
             {data.lowStockProducts.length ? (
               <div className="space-y-3">
                 {data.lowStockProducts.map(product => (
-                  <div key={product.id} className="flex items-center justify-between rounded-md border border-danger/20 bg-danger/5 p-3">
+                  <div key={product.id} className="flex items-center justify-between rounded-xl border border-danger/30 bg-gradient-to-r from-danger/5 to-warning/5 p-4 transition-all hover:shadow-md">
                     <div>
-                      <p className="text-sm font-semibold text-danger">{product.name}</p>
-                      <p className="text-xs text-neutral-500">Estoque atual {product.stock}</p>
+                      <p className="text-sm font-bold text-danger">{product.name}</p>
+                      <p className="text-xs text-neutral-500">Estoque atual: {product.stock}</p>
                     </div>
-                    <Badge variant="danger">Mínimo {product.minStock}</Badge>
+                    <Badge variant="danger">Mín: {product.minStock}</Badge>
                   </div>
                 ))}
               </div>
