@@ -9,6 +9,7 @@ export default function BarbersPage() {
   const { role } = useSession()
   const [barbers, setBarbers] = useState<any[]>([])
   const [services, setServices] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const db = getDb()
@@ -36,9 +37,17 @@ export default function BarbersPage() {
       }))
       .sort((a, b) => a.name.localeCompare(b.name))
 
+    console.log("Barbers data:", barbersData)
+    console.log("Services data:", servicesData)
+    
     setBarbers(barbersData)
     setServices(servicesData)
+    setLoading(false)
   }, [])
+
+  if (loading) {
+    return <div className="p-6">Carregando barbeiros...</div>
+  }
 
   return <BarbersScreen initialBarbers={barbers} services={services} canManage={role === "ADMIN"} />
 }

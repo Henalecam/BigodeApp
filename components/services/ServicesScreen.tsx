@@ -110,8 +110,8 @@ export function ServicesScreen({ services: defaultServices, canManage }: Service
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-primary">Serviços</h1>
-          <p className="text-sm text-neutral-500">Gerencie os serviços oferecidos</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">Serviços</h1>
+          <p className="text-sm text-neutral-600">Gerencie os serviços oferecidos • {services.length} {services.length === 1 ? 'serviço' : 'serviços'}</p>
         </div>
         {canManage ? (
           <Button
@@ -120,10 +120,20 @@ export function ServicesScreen({ services: defaultServices, canManage }: Service
               setOpen(true)
             }}
           >
-            Novo serviço
+            + Novo serviço
           </Button>
         ) : null}
       </div>
+
+      {services.length === 0 && canManage && (
+        <div className="rounded-2xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-white to-neutral-50 p-12 text-center">
+          <p className="text-lg font-semibold text-neutral-700 mb-2">Nenhum serviço cadastrado</p>
+          <p className="text-sm text-neutral-500">Clique em "+ Novo serviço" para adicionar o primeiro serviço</p>
+        </div>
+      )}
+
+      {services.length > 0 && (
+      <div className="rounded-2xl border border-primary/10 bg-white/95 backdrop-blur-md shadow-lg overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -170,9 +180,7 @@ export function ServicesScreen({ services: defaultServices, canManage }: Service
           ))}
         </TableBody>
       </Table>
-
-      {services.length === 0 && !canManage && (
-        <p className="text-center text-sm text-neutral-500 py-8">Nenhum serviço cadastrado ainda.</p>
+      </div>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>

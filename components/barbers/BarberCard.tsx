@@ -13,18 +13,25 @@ type BarberCardProps = {
 
 export function BarberCard({ id, name, phone, commissionRate, isActive, onEdit }: BarberCardProps) {
   return (
-    <Card className="border-primary/10">
-      <CardContent className="space-y-2 p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-primary">{name}</h3>
-          <Badge variant={isActive ? "success" : "outline"}>{isActive ? "Ativo" : "Inativo"}</Badge>
+    <Card className="group cursor-pointer transition-all hover:scale-[1.02] border-l-4 border-l-accent">
+      <CardContent className="space-y-3 p-5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-primary mb-1">{name}</h3>
+            {phone && <p className="text-sm text-neutral-600">{phone}</p>}
+          </div>
+          <Badge variant={isActive ? "success" : "outline"} className="shrink-0">
+            {isActive ? "Ativo" : "Inativo"}
+          </Badge>
         </div>
-        <p className="text-sm text-neutral-500">{phone}</p>
-        <p className="text-xs text-neutral-500">Comissão {commissionRate}%</p>
+        <div className="flex items-center gap-2 pt-2 border-t border-primary/10">
+          <div className="text-xs text-neutral-500">Comissão:</div>
+          <div className="text-sm font-bold text-accent">{commissionRate}%</div>
+        </div>
       </CardContent>
-      <CardFooter className="p-4">
-        <Button variant="outline" className="w-full" onClick={() => onEdit(id)}>
-          Gerenciar
+      <CardFooter className="p-4 pt-0">
+        <Button variant="outline" className="w-full group-hover:bg-gradient-to-r group-hover:from-secondary group-hover:to-accent group-hover:text-white transition-all" onClick={() => onEdit(id)}>
+          Gerenciar barbeiro
         </Button>
       </CardFooter>
     </Card>

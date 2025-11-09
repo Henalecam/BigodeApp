@@ -46,6 +46,13 @@ export function BarbersScreen({ initialBarbers, services, canManage }: BarbersSc
   const [loading, setLoading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
+  // Update barbers when initialBarbers changes
+  useState(() => {
+    if (initialBarbers.length > 0 && barbers.length === 0) {
+      setBarbers(initialBarbers)
+    }
+  })
+
   const editingBarber = useMemo(() => barbers.find(barber => barber.id === editingId), [barbers, editingId])
 
   const handleSubmit = async (data: BarberFormValues) => {
@@ -109,8 +116,8 @@ export function BarbersScreen({ initialBarbers, services, canManage }: BarbersSc
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-primary">Barbeiros</h1>
-          <p className="text-sm text-neutral-500">Gerencie a equipe e seus horários</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">Barbeiros</h1>
+          <p className="text-sm text-neutral-600">Gerencie a equipe e seus horários • {barbers.length} {barbers.length === 1 ? 'profissional' : 'profissionais'}</p>
         </div>
         {canManage ? (
           <Button
@@ -119,11 +126,19 @@ export function BarbersScreen({ initialBarbers, services, canManage }: BarbersSc
               setOpen(true)
             }}
           >
-            Novo barbeiro
+            + Novo barbeiro
           </Button>
         ) : null}
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+      {barbers.length === 0 && (
+        <div className="rounded-2xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-white to-neutral-50 p-12 text-center">
+          <p className="text-lg font-semibold text-neutral-700 mb-2">Nenhum barbeiro cadastrado</p>
+          <p className="text-sm text-neutral-500">Clique em "+ Novo barbeiro" para adicionar o primeiro profissional</p>
+        </div>
+      )}
+
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {barbers.map(barber => (
           <BarberCard
             key={barber.id}
