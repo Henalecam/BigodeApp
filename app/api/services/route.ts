@@ -5,25 +5,15 @@ import { getCurrentSession } from "@/lib/auth"
 import { serviceCreateSchema } from "@/lib/validations/service"
 
 export async function GET() {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   const db = getDb()
   const services = db.services
-    .filter(s => s.barbershopId === session.user.barbershopId)
+    .filter(s => s.barbershopId === "barbershop-1")
     .sort((a, b) => a.name.localeCompare(b.name))
 
   return NextResponse.json({ success: true, data: services })
 }
 
 export async function POST(request: Request) {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   try {
     const body = await request.json()
     const data = serviceCreateSchema.parse(body)
@@ -35,7 +25,7 @@ export async function POST(request: Request) {
       duration: data.duration,
       price: data.price,
       isActive: data.isActive ?? true,
-      barbershopId: session.user.barbershopId,
+      barbershopId: "barbershop-1",
       createdAt: new Date(),
       updatedAt: new Date()
     }

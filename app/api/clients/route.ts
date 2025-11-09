@@ -5,18 +5,13 @@ import { getCurrentSession } from "@/lib/auth"
 import { clientCreateSchema } from "@/lib/validations/client"
 
 export async function GET(request: Request) {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   const { searchParams } = new URL(request.url)
   const query = searchParams.get("query") ?? ""
 
   const db = getDb()
   const clients = db.clients
     .filter(c => {
-      if (c.barbershopId !== session.user.barbershopId) return false
+      if (c.barbershopId !== "barbershop-1") return false
       if (!query) return true
       const lowerQuery = query.toLowerCase()
       return (
@@ -43,11 +38,11 @@ export async function GET(request: Request) {
 
       return {
         ...client,
-        _count: {
+      _count: {
           appointments: clientAppointments.length
-        },
+      },
         appointments: clientAppointments
-      }
+            }
     })
     .sort((a, b) => a.name.localeCompare(b.name))
 
@@ -55,11 +50,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   try {
     const body = await request.json()
     const data = clientCreateSchema.parse(body)
@@ -71,7 +61,7 @@ export async function POST(request: Request) {
       phone: data.phone,
       email: data.email,
       notes: data.notes,
-      barbershopId: session.user.barbershopId,
+      barbershopId: "barbershop-1",
       createdAt: new Date(),
       updatedAt: new Date()
     }

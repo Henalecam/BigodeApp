@@ -11,14 +11,9 @@ type RouteContext = {
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   const db = getDb()
   const client = db.clients.find(
-    c => c.id === params.id && c.barbershopId === session.user.barbershopId
+    c => c.id === params.id && c.barbershopId === "barbershop-1"
   )
 
   if (!client) {
@@ -54,18 +49,13 @@ export async function GET(request: Request, { params }: RouteContext) {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   try {
     const body = await request.json()
     const data = clientUpdateSchema.parse(body)
 
     const db = getDb()
     const clientIndex = db.clients.findIndex(
-      c => c.id === params.id && c.barbershopId === session.user.barbershopId
+      c => c.id === params.id && c.barbershopId === "barbershop-1"
     )
 
     if (clientIndex === -1) {

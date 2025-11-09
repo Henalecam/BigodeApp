@@ -257,6 +257,69 @@ export const mockDb: MockDatabase = {
       barbershopId,
       createdAt: new Date("2024-02-05"),
       updatedAt: new Date("2024-02-05")
+    },
+    {
+      id: "client-6",
+      name: "Rafael Santos",
+      phone: "+55 11 91111-1111",
+      email: "rafael@example.com",
+      barbershopId,
+      createdAt: new Date("2024-03-01"),
+      updatedAt: new Date("2024-03-01")
+    },
+    {
+      id: "client-7",
+      name: "Gustavo Oliveira",
+      phone: "+55 11 98888-7777",
+      email: "gustavo@example.com",
+      notes: "Cliente VIP - prefere João",
+      barbershopId,
+      createdAt: new Date("2024-03-10"),
+      updatedAt: new Date("2024-03-10")
+    },
+    {
+      id: "client-8",
+      name: "Thiago Souza",
+      phone: "+55 11 97777-8888",
+      barbershopId,
+      createdAt: new Date("2024-04-01"),
+      updatedAt: new Date("2024-04-01")
+    },
+    {
+      id: "client-9",
+      name: "Marcelo Ferreira",
+      phone: "+55 11 96666-9999",
+      email: "marcelo@example.com",
+      barbershopId,
+      createdAt: new Date("2024-04-15"),
+      updatedAt: new Date("2024-04-15")
+    },
+    {
+      id: "client-10",
+      name: "Diego Cardoso",
+      phone: "+55 11 95555-4444",
+      email: "diego@example.com",
+      barbershopId,
+      createdAt: new Date("2024-05-01"),
+      updatedAt: new Date("2024-05-01")
+    },
+    {
+      id: "client-11",
+      name: "Rodrigo Mendes",
+      phone: "+55 11 94444-5555",
+      barbershopId,
+      createdAt: new Date("2024-05-10"),
+      updatedAt: new Date("2024-05-10")
+    },
+    {
+      id: "client-12",
+      name: "Fabio Ribeiro",
+      phone: "+55 11 93333-6666",
+      email: "fabio@example.com",
+      notes: "Alergia a certos produtos",
+      barbershopId,
+      createdAt: new Date("2024-06-01"),
+      updatedAt: new Date("2024-06-01")
     }
   ],
   services: [
@@ -312,75 +375,18 @@ export const mockDb: MockDatabase = {
     { barberId: "barber-3", serviceId: "service-3" }
   ],
   appointments: [
-    {
-      id: "appointment-1",
-      date: new Date(),
-      startTime: "10:00",
-      endTime: "11:15",
-      status: "CONFIRMED",
-      clientId: "client-1",
-      barberId: "barber-1",
-      barbershopId,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: "appointment-2",
-      date: new Date(),
-      startTime: "14:00",
-      endTime: "14:45",
-      status: "COMPLETED",
-      notes: "Cliente pediu acabamento moderno",
-      totalValue: 115,
-      paymentMethod: "CREDIT",
-      clientId: "client-2",
-      barberId: "barber-2",
-      barbershopId,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: "appointment-3",
-      date: new Date(),
-      startTime: "15:30",
-      endTime: "16:45",
-      status: "COMPLETED",
-      totalValue: 120,
-      paymentMethod: "PIX",
-      clientId: "client-3",
-      barberId: "barber-1",
-      barbershopId,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: "appointment-4",
-      date: new Date(new Date().setDate(new Date().getDate() - 1)),
-      startTime: "11:00",
-      endTime: "12:15",
-      status: "COMPLETED",
-      totalValue: 80,
-      paymentMethod: "CASH",
-      clientId: "client-4",
-      barberId: "barber-2",
-      barbershopId,
-      createdAt: new Date(new Date().setDate(new Date().getDate() - 1)),
-      updatedAt: new Date(new Date().setDate(new Date().getDate() - 1))
-    },
-    {
-      id: "appointment-5",
-      date: new Date(new Date().setDate(new Date().getDate() - 2)),
-      startTime: "16:00",
-      endTime: "16:45",
-      status: "COMPLETED",
-      totalValue: 85,
-      paymentMethod: "DEBIT",
-      clientId: "client-5",
-      barberId: "barber-3",
-      barbershopId,
-      createdAt: new Date(new Date().setDate(new Date().getDate() - 2)),
-      updatedAt: new Date(new Date().setDate(new Date().getDate() - 2))
-    }
+    { id: "appointment-1", date: new Date(), startTime: "10:00", endTime: "11:15", status: "CONFIRMED", clientId: "client-1", barberId: "barber-1", barbershopId, createdAt: new Date(), updatedAt: new Date() },
+    { id: "appointment-2", date: new Date(), startTime: "14:00", endTime: "14:45", status: "COMPLETED", notes: "Cliente pediu acabamento moderno", totalValue: 115, paymentMethod: "CREDIT", clientId: "client-2", barberId: "barber-2", barbershopId, createdAt: new Date(), updatedAt: new Date() },
+    { id: "appointment-3", date: new Date(), startTime: "15:30", endTime: "16:45", status: "COMPLETED", totalValue: 120, paymentMethod: "PIX", clientId: "client-3", barberId: "barber-1", barbershopId, createdAt: new Date(), updatedAt: new Date() },
+    { id: "appointment-4", date: new Date(new Date().setDate(new Date().getDate() - 1)), startTime: "11:00", endTime: "12:15", status: "COMPLETED", totalValue: 80, paymentMethod: "CASH", clientId: "client-4", barberId: "barber-2", barbershopId, createdAt: new Date(new Date().setDate(new Date().getDate() - 1)), updatedAt: new Date(new Date().setDate(new Date().getDate() - 1)) },
+    { id: "appointment-5", date: new Date(new Date().setDate(new Date().getDate() - 2)), startTime: "16:00", endTime: "16:45", status: "COMPLETED", totalValue: 85, paymentMethod: "DEBIT", clientId: "client-5", barberId: "barber-3", barbershopId, createdAt: new Date(new Date().setDate(new Date().getDate() - 2)), updatedAt: new Date(new Date().setDate(new Date().getDate() - 2)) },
+    { id: "appointment-6", date: new Date(new Date().setDate(new Date().getDate() - 3)), startTime: "09:00", endTime: "09:45", status: "COMPLETED", totalValue: 80, paymentMethod: "PIX", clientId: "client-6", barberId: "barber-1", barbershopId, createdAt: new Date(new Date().setDate(new Date().getDate() - 3)), updatedAt: new Date(new Date().setDate(new Date().getDate() - 3)) },
+    { id: "appointment-7", date: new Date(new Date().setDate(new Date().getDate() - 3)), startTime: "10:30", endTime: "11:45", status: "COMPLETED", totalValue: 170, paymentMethod: "CREDIT", clientId: "client-7", barberId: "barber-1", barbershopId, createdAt: new Date(new Date().setDate(new Date().getDate() - 3)), updatedAt: new Date(new Date().setDate(new Date().getDate() - 3)) },
+    { id: "appointment-8", date: new Date(new Date().setDate(new Date().getDate() - 4)), startTime: "14:00", endTime: "14:30", status: "COMPLETED", totalValue: 50, paymentMethod: "PIX", clientId: "client-8", barberId: "barber-2", barbershopId, createdAt: new Date(new Date().setDate(new Date().getDate() - 4)), updatedAt: new Date(new Date().setDate(new Date().getDate() - 4)) },
+    { id: "appointment-9", date: new Date(new Date().setDate(new Date().getDate() - 5)), startTime: "11:00", endTime: "12:15", status: "COMPLETED", totalValue: 120, paymentMethod: "CASH", clientId: "client-9", barberId: "barber-3", barbershopId, createdAt: new Date(new Date().setDate(new Date().getDate() - 5)), updatedAt: new Date(new Date().setDate(new Date().getDate() - 5)) },
+    { id: "appointment-10", date: new Date(new Date().setDate(new Date().getDate() - 6)), startTime: "15:00", endTime: "16:15", status: "COMPLETED", totalValue: 130, paymentMethod: "DEBIT", clientId: "client-10", barberId: "barber-1", barbershopId, createdAt: new Date(new Date().setDate(new Date().getDate() - 6)), updatedAt: new Date(new Date().setDate(new Date().getDate() - 6)) },
+    { id: "appointment-11", date: new Date(), startTime: "16:00", endTime: "16:30", status: "IN_PROGRESS", clientId: "client-11", barberId: "barber-2", barbershopId, createdAt: new Date(), updatedAt: new Date() },
+    { id: "appointment-12", date: new Date(), startTime: "17:00", endTime: "18:15", status: "CONFIRMED", clientId: "client-12", barberId: "barber-1", barbershopId, createdAt: new Date(), updatedAt: new Date() }
   ],
   appointmentServices: [
     { appointmentId: "appointment-1", serviceId: "service-1", price: 80 },
@@ -388,45 +394,31 @@ export const mockDb: MockDatabase = {
     { appointmentId: "appointment-2", serviceId: "service-1", price: 80 },
     { appointmentId: "appointment-3", serviceId: "service-3", price: 120 },
     { appointmentId: "appointment-4", serviceId: "service-1", price: 80 },
-    { appointmentId: "appointment-5", serviceId: "service-1", price: 80 }
+    { appointmentId: "appointment-5", serviceId: "service-1", price: 80 },
+    { appointmentId: "appointment-6", serviceId: "service-1", price: 80 },
+    { appointmentId: "appointment-7", serviceId: "service-3", price: 120 },
+    { appointmentId: "appointment-7", serviceId: "service-2", price: 50 },
+    { appointmentId: "appointment-8", serviceId: "service-2", price: 50 },
+    { appointmentId: "appointment-9", serviceId: "service-3", price: 120 },
+    { appointmentId: "appointment-10", serviceId: "service-1", price: 80 },
+    { appointmentId: "appointment-10", serviceId: "service-2", price: 50 },
+    { appointmentId: "appointment-11", serviceId: "service-2", price: 50 },
+    { appointmentId: "appointment-12", serviceId: "service-3", price: 120 }
   ],
   products: [
-    {
-      id: "product-1",
-      name: "Pomada Modeladora",
-      stock: 50,
-      minStock: 10,
-      salePrice: 35,
-      isActive: true,
-      barbershopId,
-      createdAt: new Date("2024-01-01"),
-      updatedAt: new Date("2024-01-01")
-    },
-    {
-      id: "product-2",
-      name: "Óleo para Barba",
-      stock: 3,
-      minStock: 5,
-      salePrice: 45,
-      isActive: true,
-      barbershopId,
-      createdAt: new Date("2024-01-01"),
-      updatedAt: new Date("2024-01-01")
-    },
-    {
-      id: "product-3",
-      name: "Shampoo Premium",
-      stock: 25,
-      minStock: 8,
-      salePrice: 40,
-      isActive: true,
-      barbershopId,
-      createdAt: new Date("2024-01-10"),
-      updatedAt: new Date("2024-01-10")
-    }
+    { id: "product-1", name: "Pomada Modeladora", stock: 50, minStock: 10, salePrice: 35, isActive: true, barbershopId, createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+    { id: "product-2", name: "Óleo para Barba", stock: 3, minStock: 5, salePrice: 45, isActive: true, barbershopId, createdAt: new Date("2024-01-01"), updatedAt: new Date("2024-01-01") },
+    { id: "product-3", name: "Shampoo Premium", stock: 25, minStock: 8, salePrice: 40, isActive: true, barbershopId, createdAt: new Date("2024-01-10"), updatedAt: new Date("2024-01-10") },
+    { id: "product-4", name: "Cera Modeladora", stock: 30, minStock: 10, salePrice: 38, isActive: true, barbershopId, createdAt: new Date("2024-01-15"), updatedAt: new Date("2024-01-15") },
+    { id: "product-5", name: "Gel Fixador Forte", stock: 20, minStock: 8, salePrice: 32, isActive: true, barbershopId, createdAt: new Date("2024-02-01"), updatedAt: new Date("2024-02-01") },
+    { id: "product-6", name: "Balm Pós-Barba", stock: 15, minStock: 5, salePrice: 42, isActive: true, barbershopId, createdAt: new Date("2024-02-10"), updatedAt: new Date("2024-02-10") },
+    { id: "product-7", name: "Shampoo Anticaspa", stock: 2, minStock: 6, salePrice: 45, isActive: true, barbershopId, createdAt: new Date("2024-03-01"), updatedAt: new Date("2024-03-01") },
+    { id: "product-8", name: "Condicionador", stock: 18, minStock: 7, salePrice: 38, isActive: true, barbershopId, createdAt: new Date("2024-03-15"), updatedAt: new Date("2024-03-15") }
   ],
   appointmentProducts: [
-    { appointmentId: "appointment-2", productId: "product-1", quantity: 1, unitPrice: 35 }
+    { appointmentId: "appointment-2", productId: "product-1", quantity: 1, unitPrice: 35 },
+    { appointmentId: "appointment-7", productId: "product-1", quantity: 1, unitPrice: 35 },
+    { appointmentId: "appointment-7", productId: "product-6", quantity: 1, unitPrice: 42 }
   ]
 }
 

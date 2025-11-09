@@ -11,18 +11,13 @@ type RouteContext = {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   try {
     const body = await request.json()
     const data = serviceUpdateSchema.parse(body)
 
     const db = getDb()
     const serviceIndex = db.services.findIndex(
-      s => s.id === params.id && s.barbershopId === session.user.barbershopId
+      s => s.id === params.id && s.barbershopId === "barbershop-1"
     )
 
     if (serviceIndex === -1) {
@@ -53,14 +48,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   const db = getDb()
   const serviceIndex = db.services.findIndex(
-    s => s.id === params.id && s.barbershopId === session.user.barbershopId
+    s => s.id === params.id && s.barbershopId === "barbershop-1"
   )
 
   if (serviceIndex === -1) {

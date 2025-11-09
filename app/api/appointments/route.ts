@@ -6,18 +6,13 @@ import { appointmentCreateSchema } from "@/lib/validations/appointment"
 import { getCurrentSession } from "@/lib/auth"
 
 export async function GET(request: Request) {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   const { searchParams } = new URL(request.url)
   const date = searchParams.get("date")
   const barberId = searchParams.get("barberId")
   const status = searchParams.get("status")
 
   const db = getDb()
-  let appointments = db.appointments.filter(a => a.barbershopId === session.user.barbershopId)
+  let appointments = db.appointments.filter(a => a.barbershopId === "barbershop-1")
 
   if (status && ["CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(status)) {
     appointments = appointments.filter(a => a.status === status)
@@ -63,11 +58,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   try {
     const body = await request.json()
     const data = appointmentCreateSchema.parse(body)
@@ -87,7 +77,7 @@ export async function POST(request: Request) {
 
     const db = getDb()
     const barber = db.barbers.find(
-      b => b.id === data.barberId && b.barbershopId === session.user.barbershopId && b.isActive
+      b => b.id === data.barberId && b.barbershopId === "barbershop-1" && b.isActive
     )
 
     if (!barber) {
@@ -98,7 +88,7 @@ export async function POST(request: Request) {
     }
 
     const services = db.services.filter(
-      s => data.serviceIds.includes(s.id) && s.barbershopId === session.user.barbershopId && s.isActive
+      s => data.serviceIds.includes(s.id) && s.barbershopId === "barbershop-1" && s.isActive
     )
 
     if (services.length !== data.serviceIds.length) {
@@ -147,7 +137,7 @@ export async function POST(request: Request) {
     const start = startOfDay(appointmentDate)
     const end = endOfDay(appointmentDate)
     const conflicting = db.appointments.find(a => {
-      if (a.barbershopId !== session.user.barbershopId) return false
+      if (a.barbershopId !== "barbershop-1") return false
       if (a.barberId !== data.barberId) return false
       if (a.date < start || a.date > end) return false
       if (!["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(a.status)) return false
@@ -170,7 +160,7 @@ export async function POST(request: Request) {
         phone: data.newClient.phone,
         email: data.newClient.email,
         notes: data.newClient.notes,
-        barbershopId: session.user.barbershopId,
+        barbershopId: "barbershop-1",
         createdAt: new Date(),
         updatedAt: new Date()
       })
@@ -194,7 +184,7 @@ export async function POST(request: Request) {
       notes: data.notes,
       clientId,
       barberId: data.barberId,
-      barbershopId: session.user.barbershopId,
+      barbershopId: "barbershop-1",
       createdAt: new Date(),
       updatedAt: new Date()
     }

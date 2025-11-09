@@ -11,18 +11,13 @@ type RouteContext = {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   try {
     const body = await request.json()
     const data = productUpdateSchema.parse(body)
 
     const db = getDb()
     const productIndex = db.products.findIndex(
-      p => p.id === params.id && p.barbershopId === session.user.barbershopId
+      p => p.id === params.id && p.barbershopId === "barbershop-1"
     )
 
     if (productIndex === -1) {
@@ -54,14 +49,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   const db = getDb()
   const productIndex = db.products.findIndex(
-    p => p.id === params.id && p.barbershopId === session.user.barbershopId
+    p => p.id === params.id && p.barbershopId === "barbershop-1"
   )
 
   if (productIndex === -1) {

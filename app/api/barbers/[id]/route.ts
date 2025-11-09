@@ -11,14 +11,9 @@ type RouteContext = {
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   const db = getDb()
   const barber = db.barbers.find(
-    b => b.id === params.id && b.barbershopId === session.user.barbershopId
+    b => b.id === params.id && b.barbershopId === "barbershop-1"
   )
 
   if (!barber) {
@@ -41,18 +36,13 @@ export async function GET(request: Request, { params }: RouteContext) {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   try {
     const body = await request.json()
     const data = barberUpdateSchema.parse(body)
 
     const db = getDb()
     const barberIndex = db.barbers.findIndex(
-      b => b.id === params.id && b.barbershopId === session.user.barbershopId
+      b => b.id === params.id && b.barbershopId === "barbershop-1"
     )
 
     if (barberIndex === -1) {
@@ -61,7 +51,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     if (data.serviceIds) {
       const services = db.services.filter(
-        s => data.serviceIds!.includes(s.id) && s.barbershopId === session.user.barbershopId
+        s => data.serviceIds!.includes(s.id) && s.barbershopId === "barbershop-1"
       )
       if (services.length !== data.serviceIds.length) {
         return NextResponse.json(
@@ -79,29 +69,29 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (data.isActive !== undefined) barber.isActive = data.isActive
     barber.updatedAt = new Date()
 
-    if (data.workingHours) {
+      if (data.workingHours) {
       db.workingHours = db.workingHours.filter(wh => wh.barberId !== params.id)
       data.workingHours.forEach(hour => {
         db.workingHours.push({
           id: generateId(),
-          barberId: params.id,
-          dayOfWeek: hour.dayOfWeek,
-          startTime: hour.startTime,
-          endTime: hour.endTime,
-          isActive: hour.isActive ?? true
+            barberId: params.id,
+            dayOfWeek: hour.dayOfWeek,
+            startTime: hour.startTime,
+            endTime: hour.endTime,
+            isActive: hour.isActive ?? true
         })
-      })
-    }
+        })
+      }
 
-    if (data.serviceIds) {
+      if (data.serviceIds) {
       db.barberServices = db.barberServices.filter(bs => bs.barberId !== params.id)
       data.serviceIds.forEach(serviceId => {
         db.barberServices.push({
-          barberId: params.id,
-          serviceId
+            barberId: params.id,
+            serviceId
         })
-      })
-    }
+        })
+      }
 
     const result = {
       ...barber,
@@ -131,14 +121,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   const db = getDb()
   const barberIndex = db.barbers.findIndex(
-    b => b.id === params.id && b.barbershopId === session.user.barbershopId
+    b => b.id === params.id && b.barbershopId === "barbershop-1"
   )
 
   if (barberIndex === -1) {

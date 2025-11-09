@@ -10,17 +10,12 @@ const settingsSchema = z.object({
 })
 
 export async function PATCH(request: Request) {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   try {
     const body = await request.json()
     const data = settingsSchema.parse(body)
 
     const db = getDb()
-    const barbershopIndex = db.barbershops.findIndex(b => b.id === session.user.barbershopId)
+    const barbershopIndex = db.barbershops.findIndex(b => b.id === "barbershop-1")
 
     if (barbershopIndex === -1) {
       return NextResponse.json({ success: false, error: "Barbearia não encontrada" }, { status: 404 })

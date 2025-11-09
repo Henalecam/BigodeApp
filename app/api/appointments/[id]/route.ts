@@ -12,14 +12,9 @@ type RouteContext = {
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   const db = getDb()
   const appointment = db.appointments.find(
-    a => a.id === params.id && a.barbershopId === session.user.barbershopId
+    a => a.id === params.id && a.barbershopId === "barbershop-1"
   )
 
   if (!appointment) {
@@ -63,18 +58,13 @@ export async function GET(request: Request, { params }: RouteContext) {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   try {
     const body = await request.json()
     const data = appointmentUpdateSchema.parse(body)
 
     const db = getDb()
     const appointmentIndex = db.appointments.findIndex(
-      a => a.id === params.id && a.barbershopId === session.user.barbershopId
+      a => a.id === params.id && a.barbershopId === "barbershop-1"
     )
 
     if (appointmentIndex === -1) {
@@ -85,7 +75,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     const targetBarberId = data.barberId ?? appointment.barberId
     const barber = db.barbers.find(
-      b => b.id === targetBarberId && b.barbershopId === session.user.barbershopId && b.isActive
+      b => b.id === targetBarberId && b.barbershopId === "barbershop-1" && b.isActive
     )
 
     if (!barber) {
@@ -101,7 +91,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     if (data.serviceIds) {
       services = db.services.filter(
-        s => data.serviceIds!.includes(s.id) && s.barbershopId === session.user.barbershopId && s.isActive
+        s => data.serviceIds!.includes(s.id) && s.barbershopId === "barbershop-1" && s.isActive
       )
       if (services.length !== data.serviceIds.length) {
         return NextResponse.json(
@@ -161,7 +151,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const end = endOfDay(appointment.date)
     const overlapping = db.appointments.find(a => {
       if (a.id === appointment.id) return false
-      if (a.barbershopId !== session.user.barbershopId) return false
+      if (a.barbershopId !== "barbershop-1") return false
       if (a.barberId !== targetBarberId) return false
       if (a.date < start || a.date > end) return false
       if (!["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(a.status)) return false
@@ -248,14 +238,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   const db = getDb()
   const appointmentIndex = db.appointments.findIndex(
-    a => a.id === params.id && a.barbershopId === session.user.barbershopId
+    a => a.id === params.id && a.barbershopId === "barbershop-1"
   )
 
   if (appointmentIndex === -1) {

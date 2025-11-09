@@ -11,18 +11,13 @@ type RouteContext = {
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   try {
     const body = await request.json()
     const data = appointmentFinalizeSchema.parse(body)
 
     const db = getDb()
     const appointmentIndex = db.appointments.findIndex(
-      a => a.id === params.id && a.barbershopId === session.user.barbershopId
+      a => a.id === params.id && a.barbershopId === "barbershop-1"
     )
 
     if (appointmentIndex === -1) {
@@ -47,7 +42,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     const serviceIds = data.services.map(service => service.id)
     const services = db.services.filter(
-      s => serviceIds.includes(s.id) && s.barbershopId === session.user.barbershopId
+      s => serviceIds.includes(s.id) && s.barbershopId === "barbershop-1"
     )
 
     if (services.length !== data.services.length) {
@@ -59,7 +54,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     const productIds = data.products?.map(product => product.id) ?? []
     const products = db.products.filter(
-      p => productIds.includes(p.id) && p.barbershopId === session.user.barbershopId && p.isActive
+      p => productIds.includes(p.id) && p.barbershopId === "barbershop-1" && p.isActive
     )
 
     if (productIds.length && products.length !== productIds.length) {

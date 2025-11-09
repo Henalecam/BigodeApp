@@ -5,14 +5,9 @@ import { getCurrentSession } from "@/lib/auth"
 import { barberCreateSchema } from "@/lib/validations/barber"
 
 export async function GET() {
-  const session = await getCurrentSession()
-  if (!session?.user) {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   const db = getDb()
   const barbers = db.barbers
-    .filter(b => b.barbershopId === session.user.barbershopId)
+    .filter(b => b.barbershopId === "barbershop-1")
     .map(barber => ({
       ...barber,
       workingHours: db.workingHours.filter(wh => wh.barberId === barber.id),
@@ -30,18 +25,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await getCurrentSession()
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 })
-  }
-
   try {
     const body = await request.json()
     const data = barberCreateSchema.parse(body)
 
     const db = getDb()
     const services = db.services.filter(
-      s => data.serviceIds.includes(s.id) && s.barbershopId === session.user.barbershopId && s.isActive
+      s => data.serviceIds.includes(s.id) && s.barbershopId === "barbershop-1" && s.isActive
     )
 
     if (services.length !== data.serviceIds.length) {
@@ -59,7 +49,7 @@ export async function POST(request: Request) {
       phone: data.phone,
       commissionRate: data.commissionRate,
       isActive: true,
-      barbershopId: session.user.barbershopId,
+      barbershopId: "barbershop-1",
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -70,17 +60,17 @@ export async function POST(request: Request) {
       db.workingHours.push({
         id: generateId(),
         barberId,
-        dayOfWeek: hour.dayOfWeek,
-        startTime: hour.startTime,
-        endTime: hour.endTime,
-        isActive: hour.isActive ?? true
+            dayOfWeek: hour.dayOfWeek,
+            startTime: hour.startTime,
+            endTime: hour.endTime,
+            isActive: hour.isActive ?? true
       })
     })
 
     data.serviceIds.forEach(serviceId => {
       db.barberServices.push({
         barberId,
-        serviceId
+            serviceId
       })
     })
 
