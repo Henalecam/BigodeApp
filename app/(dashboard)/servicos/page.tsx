@@ -8,6 +8,7 @@ import { useSession } from "@/lib/session-store"
 export default function ServicesPage() {
   const { role } = useSession()
   const [services, setServices] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const db = getDb()
@@ -22,8 +23,14 @@ export default function ServicesPage() {
       }))
       .sort((a, b) => a.name.localeCompare(b.name))
 
+    console.log("Services data:", servicesData)
     setServices(servicesData)
+    setLoading(false)
   }, [])
+
+  if (loading) {
+    return <div className="p-6">Carregando...</div>
+  }
 
   return <ServicesScreen services={services} canManage={role === "ADMIN"} />
 }

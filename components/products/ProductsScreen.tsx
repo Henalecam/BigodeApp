@@ -171,6 +171,11 @@ export function ProductsScreen({ products: defaultProducts, canManage }: Product
           ))}
         </TableBody>
       </Table>
+
+      {products.length === 0 && !canManage && (
+        <p className="text-center text-sm text-neutral-500 py-8">Nenhum produto cadastrado ainda.</p>
+      )}
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

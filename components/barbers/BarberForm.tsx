@@ -85,14 +85,14 @@ export function BarberForm({ services, initialData, onSubmit, onCancel, loading 
 
   return (
     <Form {...form}>
-      <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="grid gap-4 sm:grid-cols-2">
+      <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="grid gap-3 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome</FormLabel>
+                <FormLabel>Nome *</FormLabel>
                 <FormControl>
                   <Input placeholder="Nome completo" autoFocus {...field} />
                 </FormControl>
@@ -113,14 +113,17 @@ export function BarberForm({ services, initialData, onSubmit, onCancel, loading 
               </FormItem>
             )}
           />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="commissionRate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Comissão (%)</FormLabel>
+                <FormLabel>Comissão (%) *</FormLabel>
                 <FormControl>
-                  <Input type="number" min={0} max={100} {...field} />
+                  <Input type="number" min={0} max={100} {...field} onChange={e => field.onChange(Number(e.target.value))} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -130,7 +133,7 @@ export function BarberForm({ services, initialData, onSubmit, onCancel, loading 
             control={form.control}
             name="isActive"
             render={({ field }) => (
-              <FormItem className="flex items-center gap-2 space-y-0 pt-6">
+              <FormItem className="flex items-center gap-2 space-y-0 pt-8">
                 <FormControl>
                   <Checkbox checked={field.value} onCheckedChange={checked => field.onChange(Boolean(checked))} />
                 </FormControl>
@@ -140,13 +143,13 @@ export function BarberForm({ services, initialData, onSubmit, onCancel, loading 
           />
         </div>
 
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-primary">Serviços</h3>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-primary">Serviços *</h3>
+          <div className="grid gap-2 sm:grid-cols-2">
             {services.map(service => (
               <label
                 key={service.id}
-                className="flex cursor-pointer items-center justify-between rounded-md border border-primary/10 px-3 py-2 text-sm transition hover:border-primary/40"
+                className="flex cursor-pointer items-center justify-between rounded-lg border border-primary/10 px-3 py-2 text-sm transition hover:border-accent hover:bg-accent/5"
               >
                 <span>{service.name}</span>
                 <Checkbox
@@ -171,14 +174,15 @@ export function BarberForm({ services, initialData, onSubmit, onCancel, loading 
 
         <Separator />
 
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-primary">Horários de trabalho</h3>
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-primary">Horários de trabalho *</h3>
+          <p className="text-xs text-neutral-500">Marque os dias e defina os horários</p>
           <div className="space-y-2">
             {days.map(day => {
               const workingHour = form.watch("workingHours").find(item => item.dayOfWeek === day.value)
               if (!workingHour) return null
               return (
-                <div key={day.value} className="grid gap-2 rounded-lg border border-primary/10 p-3 sm:grid-cols-[160px_1fr_1fr]">
+                <div key={day.value} className="grid gap-2 rounded-lg border border-primary/10 bg-gradient-to-r from-white to-neutral-50 p-3 sm:grid-cols-[140px_1fr_1fr]">
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={workingHour.isActive}
@@ -189,10 +193,11 @@ export function BarberForm({ services, initialData, onSubmit, onCancel, loading 
                         form.setValue("workingHours", [...current])
                       }}
                     />
-                    <Badge variant={workingHour.isActive ? "success" : "outline"}>{day.label}</Badge>
+                    <span className="text-sm font-medium">{day.label}</span>
                   </div>
                   <Input
                     type="time"
+                    disabled={!workingHour.isActive}
                     value={workingHour.startTime}
                     onChange={event => {
                       const current = form.getValues("workingHours")
@@ -203,6 +208,7 @@ export function BarberForm({ services, initialData, onSubmit, onCancel, loading 
                   />
                   <Input
                     type="time"
+                    disabled={!workingHour.isActive}
                     value={workingHour.endTime}
                     onChange={event => {
                       const current = form.getValues("workingHours")
@@ -217,12 +223,12 @@ export function BarberForm({ services, initialData, onSubmit, onCancel, loading 
           </div>
         </div>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="ghost" onClick={onCancel}>
             Cancelar
           </Button>
           <Button type="submit" disabled={loading}>
-            Salvar barbeiro
+            {loading ? "Salvando..." : "Salvar barbeiro"}
           </Button>
         </div>
       </form>

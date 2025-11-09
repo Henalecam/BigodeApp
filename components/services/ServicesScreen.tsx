@@ -171,6 +171,10 @@ export function ServicesScreen({ services: defaultServices, canManage }: Service
         </TableBody>
       </Table>
 
+      {services.length === 0 && !canManage && (
+        <p className="text-center text-sm text-neutral-500 py-8">Nenhum serviço cadastrado ainda.</p>
+      )}
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

@@ -140,7 +140,7 @@ export function BarbersScreen({ initialBarbers, services, canManage }: BarbersSc
         ))}
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingBarber ? "Editar barbeiro" : "Novo barbeiro"}</DialogTitle>
           </DialogHeader>
