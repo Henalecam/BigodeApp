@@ -21,8 +21,8 @@ export async function GET(request: Request) {
     barbershopId: session.user.barbershopId
   }
 
-  if (status) {
-    filters.status = status
+  if (status && ["CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"].includes(status)) {
+    filters.status = status as "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
   }
 
   if (barberId) {

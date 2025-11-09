@@ -4,7 +4,11 @@ import { getCurrentSession } from "@/lib/auth"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
-const reportLinks = [
+const reportLinks: Array<{
+  title: string
+  description: string
+  href: "/relatorios/comissoes" | "/relatorios/faturamento"
+}> = [
   {
     title: "Comissões",
     description: "Acompanhe comissões por barbeiro em períodos específicos.",
