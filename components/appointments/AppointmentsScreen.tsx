@@ -60,13 +60,13 @@ export function AppointmentsScreen({ barbers }: { barbers: BarberOption[] }) {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-primary">Agendamentos</h1>
-          <p className="text-sm text-neutral-500">
-            Gerencie os atendimentos do dia e crie novos agendamentos
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">Agendamentos</h1>
+          <p className="text-sm text-neutral-600">
+            Gerencie os atendimentos do dia • {appointments.length} {appointments.length === 1 ? 'agendamento' : 'agendamentos'}
           </p>
         </div>
         <Button asChild>
-          <Link href="/agendamentos/novo">Novo agendamento</Link>
+          <Link href="/agendamentos/novo">+ Novo agendamento</Link>
         </Button>
       </div>
       <WeekCalendar
