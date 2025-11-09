@@ -188,16 +188,16 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (data.status !== undefined) appointment.status = data.status
     appointment.updatedAt = new Date()
 
-    if (data.serviceIds) {
+      if (data.serviceIds) {
       db.appointmentServices = db.appointmentServices.filter(as => as.appointmentId !== appointment.id)
       services.forEach(service => {
         db.appointmentServices.push({
-          appointmentId: appointment.id,
-          serviceId: service.id,
-          price: service.price
+            appointmentId: appointment.id,
+            serviceId: service.id,
+            price: service.price
         })
-      })
-    }
+        })
+      }
 
     const result = {
       ...appointment,
